@@ -1,5 +1,5 @@
 {
-  "name": "sukima-trip-frontend-local",
+  "name": "sukima-trip-frontend",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {

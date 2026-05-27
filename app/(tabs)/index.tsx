@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -11,12 +11,36 @@ import {
 
 import { login } from "@/api/auth";
 import { ThemedText } from "@/components/themed-text";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const ACCESS_TOKEN_KEY = "access_token";
 
 export default function HomeScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [name, setName] = useState("");
+  const [gender, setGender] = useState("");
+
+  useEffect(() => {
+    async function loadAuthState() {
+      try {
+        const token = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+        setIsLoggedIn(!!token);
+      } catch {
+        setIsLoggedIn(false);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    }
+
+    loadAuthState();
+  }, []);
+  //token があればisLoggedIn =　trueなければ falseになります。
 
   async function handleLogin() {
     if (!email || !password) {
@@ -30,7 +54,11 @@ export default function HomeScreen() {
     try {
       const result = await login({ email, password });
 
+      await AsyncStorage.setItem(ACCESS_TOKEN_KEY, result.access_token);
+      setIsLoggedIn(true);
+
       Alert.alert("ログイン成功", `user_id: ${result.user_id}`);
+      //ログイン後にtokenが保存される
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "ログインに失敗しました",
@@ -38,6 +66,49 @@ export default function HomeScreen() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function handleLogout() {
+    await AsyncStorage.removeItem(ACCESS_TOKEN_KEY);
+    setIsLoggedIn(false);
+    setEmail("");
+    setPassword("");
+    setErrorMessage("");
+  }
+
+  if (isCheckingAuth) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <ActivityIndicator size="large" color="#1f6f5f" />
+          <ThemedText>ログイン状態を確認中です...</ThemedText>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (isLoggedIn) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <ThemedText type="title">Home</ThemedText>
+          <ThemedText style={styles.description}>
+            ログイン済みです。ここを仮ホームとして使います。
+          </ThemedText>
+
+          <View style={styles.homeCard}>
+            <ThemedText type="defaultSemiBold">Sukima Trip</ThemedText>
+            <ThemedText>
+              ここからホーム画面や移動ログ画面を広げていく予定です。
+            </ThemedText>
+          </View>
+
+          <Pressable onPress={handleLogout} style={styles.button}>
+            <ThemedText style={styles.buttonText}>ログアウト</ThemedText>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -141,5 +212,13 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#ffffff",
     fontWeight: "600",
+  },
+  homeCard: {
+    gap: 8,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#d5cec3",
   },
 });

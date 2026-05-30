@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -8,39 +8,21 @@ import {
   View,
 } from "react-native";
 
-import { login, register } from "@/api/auth";
-import { ThemedText } from "@/components/themed-text";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { register } from "@/api/auth";
 import { AuthForm } from "@/components/auth/auth-form";
-
-const ACCESS_TOKEN_KEY = "access_token";
+import { ThemedText } from "@/components/themed-text";
+import { useAuth } from "@/components/auth/use-auth";
 
 export default function HomeScreen() {
+  const { isLoggedIn, isCheckingAuth, loginUser, logoutUser } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [name, setName] = useState("");
   const [gender, setGender] = useState("");
-
-  useEffect(() => {
-    async function loadAuthState() {
-      try {
-        const token = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
-        setIsLoggedIn(!!token);
-      } catch {
-        setIsLoggedIn(false);
-      } finally {
-        setIsCheckingAuth(false);
-      }
-    }
-
-    loadAuthState();
-  }, []);
-  //token があればisLoggedIn =　trueなければ falseになります。
 
   async function handleLogin() {
     if (!email || !password) {
@@ -52,13 +34,8 @@ export default function HomeScreen() {
     setIsLoading(true);
 
     try {
-      const result = await login({ email, password });
-
-      await AsyncStorage.setItem(ACCESS_TOKEN_KEY, result.access_token);
-      setIsLoggedIn(true);
-
+      const result = await loginUser(email, password);
       Alert.alert("ログイン成功", `user_id: ${result.user_id}`);
-      //ログイン後にtokenが保存される
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "ログインに失敗しました",
@@ -93,8 +70,7 @@ export default function HomeScreen() {
   }
 
   async function handleLogout() {
-    await AsyncStorage.removeItem(ACCESS_TOKEN_KEY);
-    setIsLoggedIn(false);
+    await logoutUser();
     setEmail("");
     setPassword("");
     setErrorMessage("");
@@ -135,30 +111,30 @@ export default function HomeScreen() {
     );
   }
 
-return (
-  <SafeAreaView style={styles.container}>
-    <View style={styles.content}>
-      <AuthForm
-        isRegisterMode={isRegisterMode}
-        name={name}
-        gender={gender}
-        email={email}
-        password={password}
-        errorMessage={errorMessage}
-        isLoading={isLoading}
-        onChangeName={setName}
-        onChangeGender={setGender}
-        onChangeEmail={setEmail}
-        onChangePassword={setPassword}
-        onSubmit={isRegisterMode ? handleRegister : handleLogin}
-        onToggleMode={() => {
-          setIsRegisterMode(!isRegisterMode);
-          setErrorMessage("");
-        }}
-      />
-    </View>
-  </SafeAreaView>
-);
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <AuthForm
+          isRegisterMode={isRegisterMode}
+          name={name}
+          gender={gender}
+          email={email}
+          password={password}
+          errorMessage={errorMessage}
+          isLoading={isLoading}
+          onChangeName={setName}
+          onChangeGender={setGender}
+          onChangeEmail={setEmail}
+          onChangePassword={setPassword}
+          onSubmit={isRegisterMode ? handleRegister : handleLogin}
+          onToggleMode={() => {
+            setIsRegisterMode(!isRegisterMode);
+            setErrorMessage("");
+          }}
+        />
+      </View>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -175,33 +151,12 @@ const styles = StyleSheet.create({
   description: {
     color: "#5f5a52",
   },
-  form: {
-    gap: 16,
-  },
-  field: {
-    gap: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#d5cec3",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#ffffff",
-    fontSize: 16,
-  },
-  errorText: {
-    color: "#c0392b",
-  },
   button: {
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 12,
     paddingVertical: 14,
     backgroundColor: "#1f6f5f",
-  },
-  buttonDisabled: {
-    opacity: 0.7,
   },
   buttonText: {
     color: "#ffffff",
@@ -214,10 +169,5 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: "#d5cec3",
-  },
-
-  switchText: {
-    color: "#1f6f5f",
-    textAlign: "center",
   },
 });

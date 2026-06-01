@@ -34,19 +34,29 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <ThemedText type="title">Home</ThemedText>
-        <ThemedText style={styles.description}>
-          ログイン済みです。ここを仮ホームとして使います。
-        </ThemedText>
-
-        <View style={styles.homeCard}>
-          <ThemedText type="defaultSemiBold">Sukima Trip</ThemedText>
-          <ThemedText>
-            ここからホーム画面や移動ログ画面を広げていく予定です。
+        <View style={styles.hero}>
+          <ThemedText type="title">Sukima Trip</ThemedText>
+          <ThemedText style={styles.description}>
+            すきま時間の移動やスポット記録をここから見ていきます。
           </ThemedText>
         </View>
 
-        <Pressable onPress={handleLogout} style={styles.button}>
+        <View style={styles.sectionCard}>
+          <ThemedText type="defaultSemiBold">プロフィール</ThemedText>
+          <ThemedText>ユーザー情報をここに表示していく予定です。</ThemedText>
+        </View>
+
+        <View style={styles.sectionCard}>
+          <ThemedText type="defaultSemiBold">移動データ</ThemedText>
+          <ThemedText>movements 系 API をつないでここに表示します。</ThemedText>
+        </View>
+
+        <View style={styles.sectionCard}>
+          <ThemedText type="defaultSemiBold">スポット</ThemedText>
+          <ThemedText>Spots 一覧や visited 情報につなげていきます。</ThemedText>
+        </View>
+
+        <Pressable onPress={handleLogout} style={styles.logoutButton}>
           <ThemedText style={styles.buttonText}>ログアウト</ThemedText>
         </Pressable>
       </View>
@@ -68,23 +78,27 @@ const styles = StyleSheet.create({
   description: {
     color: "#5f5a52",
   },
-  button: {
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 12,
-    paddingVertical: 14,
-    backgroundColor: "#1f6f5f",
-  },
+
   buttonText: {
     color: "#ffffff",
     fontWeight: "600",
   },
-  homeCard: {
+  hero: {
+    gap: 8,
+  },
+  sectionCard: {
     gap: 8,
     padding: 16,
     borderRadius: 12,
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: "#d5cec3",
+  },
+  logoutButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    paddingVertical: 14,
+    backgroundColor: "#1f6f5f",
   },
 });

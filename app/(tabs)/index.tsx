@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -8,9 +9,36 @@ import {
 
 import { ThemedText } from "@/components/themed-text";
 import { useAuth } from "@/components/auth/use-auth";
+import { getProfile, ProfileResponse } from "@/api/profile";
+import { getAccessToken } from "@/components/auth/auth-storage";
 
 export default function HomeScreen() {
   const { isLoggedIn, isCheckingAuth, logoutUser } = useAuth();
+  const [profile, setProfile] = useState<ProfileResponse | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+
+  useEffect(() => {
+  async function loadProfile() {
+    try {
+      const token = await getAccessToken();
+
+      if (!token) {
+        setProfile(null);
+        return;
+      }
+
+      const result = await getProfile(token);
+      setProfile(result);
+    } catch (error) {
+      console.error("プロフィール取得に失敗しました", error);
+      setProfile(null);
+    } finally {
+      setIsProfileLoading(false);
+    }
+  }
+
+  loadProfile();
+}, []);//ホーム画面が開いた時にプロフィール取得が走る、tokenを読んで/profileを叩く、結果をprofile　stateに入れる
 
   async function handleLogout() {
     await logoutUser();
@@ -43,7 +71,16 @@ export default function HomeScreen() {
 
         <View style={styles.sectionCard}>
           <ThemedText type="defaultSemiBold">プロフィール</ThemedText>
-          <ThemedText>ユーザー情報をここに表示していく予定です。</ThemedText>
+          {isProfileLoading ? (
+            <ThemedText>読み込み中です...</ThemedText>
+          ) : profile ? (
+            <>
+              <ThemedText>名前: {profile.name}</ThemedText>
+              <ThemedText>ユーザーID: {profile.id}</ThemedText>
+            </>
+          ) : (
+            <ThemedText>プロフィールを取得できませんでした。</ThemedText>
+          )}
         </View>
 
         <View style={styles.sectionCard}>

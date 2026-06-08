@@ -132,19 +132,73 @@ export default function HomeScreen() {
         ) : null}
 
         {isDashboardOpen ? (
-          <View style={styles.dashboardOverlay}>
-            <View style = {styles.dashboardPanel}>
-              <Pressable
-                style={styles.dashboardCloseButton}
-                onPress={() => setIsDashboardOpen(false)}
-              >
-                <ThemedText style={styles.dashboardCloseText}>x</ThemedText>
-               </Pressable>
+          <Pressable
+            style={styles.dashboardOverlay}
+            onPress={() => setIsDashboardOpen(false)}
+          >
+            <View style={styles.dashboardPanel}>
+              <Image
+                source={require("@/assets/images/dashboard/passport-open.png")}
+                style={styles.dashboardPassportImage}
+              />
 
-               <ThemedText type="title">Dashboard</ThemedText>
-          </View>
-          </View>
-        ):null}
+              <View style={styles.dashboardContent}>
+                <ThemedText style={styles.dashboardSectionTitle}>
+                  あなたの軌跡
+                </ThemedText>
+                <ThemedText style={styles.dashboardSmallText}>
+                  ＜今日の移動記録＞
+                </ThemedText>
+                <ThemedText style={styles.dashboardDistanceText}>
+                  1,250 km
+                </ThemedText>
+                <ThemedText style={styles.dashboardSmallText}>
+                  ＜今日の獲得コイン数＞
+                </ThemedText>
+                <ThemedText style={styles.dashboardCoinText}>40 C</ThemedText>
+
+                <View style={styles.passportInfoArea}>
+                  <Image
+                    source={require("@/assets/images/profile/passport-avatar.png")}
+                    style={styles.passportAvatar}
+                  />
+
+                  <View style={styles.passportInfo}>
+                    <View style={styles.profileRow}>
+                      <View style={styles.profileField}>
+                        <ThemedText style={styles.profileLabel}>
+                          氏名
+                        </ThemedText>
+                        <ThemedText style={styles.profileValue}>
+                          ○○○○
+                        </ThemedText>
+                      </View>
+                      <View style={styles.profileField}>
+                        <ThemedText style={styles.profileLabel}>
+                          性別
+                        </ThemedText>
+                        <ThemedText style={styles.profileValue}>○</ThemedText>
+                      </View>
+                    </View>
+
+                    <ThemedText style={styles.dashboardSmallText}>
+                      --- 通算移動記録 ---
+                    </ThemedText>
+                    <ThemedText style={styles.totalDistanceText}>
+                      1,1900 km
+                    </ThemedText>
+                  </View>
+                </View>
+              </View>
+
+              <Pressable style={styles.profileEditButton}>
+                <ThemedText style={styles.profileEditText}>
+                  プロフィール変更
+                </ThemedText>
+              </Pressable>
+            </View>
+          </Pressable>
+        ) : null}
 
         <View style={styles.bottomNav}>
           <Pressable
@@ -172,7 +226,7 @@ export default function HomeScreen() {
 
           <Pressable
             style={styles.navItem}
-            onPress={() => setIsDashboardOpen(true)}
+            onPress={() => setIsDashboardOpen((current) => !current)}
           >
             <View style={styles.passportIconWrap}>
               <Image
@@ -180,7 +234,11 @@ export default function HomeScreen() {
                 style={styles.passportIconBase}
               />
               <Image
-                source={require("@/assets/images/home/map1/passport-icon.png")}
+                source={
+                  isDashboardOpen
+                    ? require("@/assets/images/dashboard/passport-selected-icon.png")
+                    : require("@/assets/images/home/map1/passport-icon.png")
+                }
                 style={styles.passportImage}
               />
             </View>
@@ -279,6 +337,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     justifyContent: "space-around",
     paddingBottom: 6,
+    zIndex: 20,
   },
   navItem: {
     width: 120,
@@ -322,10 +381,10 @@ const styles = StyleSheet.create({
   },
   passportImage: {
     position: "absolute",
-    left: 4,
-    bottom: 10,
-    width: 100,
-    height: 100,
+    left: -2,
+    bottom: 8,
+    width: 112,
+    height: 112,
     resizeMode: "contain",
   },
   navLabel: {
@@ -361,36 +420,169 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   dashboardOverlay: {
-  ...StyleSheet.absoluteFillObject,
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: "rgba(0, 0, 0, 0.25)",
-  zIndex: 10,
-},
-dashboardPanel: {
-  width: "88%",
-  minHeight: 360,
-  padding: 20,
-  borderRadius: 24,
-  backgroundColor: "#fff7dc",
-  borderWidth: 3,
-  borderColor: "#9e171a",
-  gap: 12,
-},
-dashboardCloseButton: {
-  position: "absolute",
-  top: 12,
-  right: 12,
-  width: 32,
-  height: 32,
-  borderRadius: 16,
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: "#ffffff",
-},
-dashboardCloseText: {
-  color: "#111111",
-  fontSize: 22,
-  fontWeight: "800",
-},
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.25)",
+    zIndex: 10,
+  },
+
+  dashboardPassportImage: {
+    position: "absolute",
+    width: "100%",
+    top:-0,
+    height: "100%",
+    resizeMode: "contain",
+  },
+  dashboardContent: {
+    width: "78%",
+    minHeight: 260,
+    paddingTop: 40,
+    gap: 12,
+    zIndex: 1,
+  },
+  dashboardTitle: {
+    color: "#4a2f1b",
+    fontSize: 22,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  dashboardText: {
+    color: "#4a2f1b",
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+  },
+
+  dashboardPanel: {
+    width: "88%",
+    maxWidth: 380,
+    alignItems: "center",
+    gap: 12,
+  },
+  dashboardTopCard: {
+    width: "100%",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    borderWidth: 3,
+    borderColor: "#9e171a",
+    backgroundColor: "#fff4c9",
+    alignItems: "center",
+    gap: 6,
+  },
+  dashboardBottomCard: {
+    width: "100%",
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    borderWidth: 3,
+    borderColor: "#9e171a",
+    backgroundColor: "#fff4c9",
+    gap: 12,
+  },
+  dashboardSectionTitle: {
+    color: "#111111",
+    fontSize: 20,
+    fontWeight: "700",
+    textDecorationLine: "underline",
+  },
+  dashboardSmallText: {
+    color: "#333333",
+    fontSize: 13,
+    textAlign: "center",
+  },
+  dashboardDistanceText: {
+    color: "#111111",
+    fontSize: 34,
+    fontWeight: "800",
+  },
+  dashboardCoinText: {
+    color: "#111111",
+    fontSize: 24,
+    fontWeight: "800",
+  },
+  passportHeader: {
+    paddingLeft: 24,
+  },
+  passportSmallText: {
+    color: "#333333",
+    fontSize: 14,
+  },
+  passportContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 18,
+  },
+  avatarArea: {
+    width: 110,
+    height: 110,
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  passportAvatar: {
+    width: 92,
+    height: 92,
+    resizeMode: "contain",
+  },
+  passportFootprint: {
+    position: "absolute",
+    right: 0,
+    bottom: 0,
+    width: 44,
+    height: 44,
+    resizeMode: "contain",
+  },
+  passportInfo: {
+    flex: 1,
+    gap: 10,
+    alignItems: "center",
+  },
+  profileRow: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  profileField: {
+    alignItems: "center",
+    gap: 2,
+  },
+  profileLabel: {
+    color: "#333333",
+    fontSize: 14,
+  },
+  profileValue: {
+    color: "#111111",
+    fontSize: 14,
+  },
+  totalDistanceText: {
+    color: "#111111",
+    fontSize: 24,
+    fontWeight: "700",
+  },
+  profileEditButton: {
+    marginTop: 8,
+    width: "72%",
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 3,
+    borderColor: "#9e171a",
+    backgroundColor: "#fff4c9",
+    alignItems: "center",
+  },
+  profileEditText: {
+    color: "#111111",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+
+  passportInfoArea: {
+    marginTop: 48,
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  
 });

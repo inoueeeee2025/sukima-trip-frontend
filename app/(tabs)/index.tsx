@@ -27,6 +27,7 @@ export default function HomeScreen() {
   const [todayMovement, setTodayMovement] =
     useState<TodayMovementResponse | null>(null);
   const [isMovementLoading, setIsMovementLoading] = useState(true);
+  const [isExploreMode, setIsExploreMode] = useState(false);
 
   useEffect(() => {
     async function loadHomeData() {
@@ -84,7 +85,11 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ImageBackground
-        source={require("@/assets/images/home/map1/map-background.png")}
+        source={
+          isExploreMode
+            ? require("@/assets/images/home/map3/map-explore-background.png")
+            : require("@/assets/images/home/map1/map-background.png")
+        }
         style={styles.mapArea}
         resizeMode="cover"
       >
@@ -118,16 +123,32 @@ export default function HomeScreen() {
           />
           <ThemedText style={styles.coinText}>360</ThemedText>
         </View>
+
+        {isExploreMode ? (
+          <View style={styles.statusPill}>
+            <ThemedText style={styles.statusText}>＜探索モード中＞</ThemedText>
+          </View>
+        ) : null}
+
         <View style={styles.bottomNav}>
-          <Pressable style={styles.navItem}>
+          <Pressable
+            style={styles.navItem}
+            onPress={() => setIsExploreMode((current) => !current)}
+          >
             <View style={styles.exploreIconWrap}>
               <Image
                 source={require("@/assets/images/home/map1/explore-icon.png")}
                 style={styles.exploreIconBase}
               />
               <Image
-                source={require("@/assets/images/home/map1/explore-character.png")}
-                style={styles.exploreCharacter}
+                source={
+                  isExploreMode
+                    ? require("@/assets/images/home/map3/walking-icon.png")
+                    : require("@/assets/images/home/map1/explore-character.png")
+                }
+                style={
+                  isExploreMode ? styles.walkingIcon : styles.exploreCharacter
+                }
               />
             </View>
             <ThemedText style={styles.navLabel}>探索モード</ThemedText>
@@ -160,7 +181,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#60d0e5",
   },
-    content: {
+  content: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
@@ -301,5 +322,26 @@ const styles = StyleSheet.create({
     color: "#585555",
     fontSize: 18,
     fontWeight: "800",
-  }
+  },
+  statusPill: {
+    position: "absolute",
+    bottom: 128,
+    alignSelf: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 6,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.75)",
+  },
+  statusText: {
+    color: "#333333",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  walkingIcon: {
+    position: "absolute",
+    bottom: 20,
+    width: 50,
+    height: 80,
+    resizeMode: "contain",
+  },
 });

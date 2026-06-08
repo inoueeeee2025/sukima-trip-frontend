@@ -116,6 +116,7 @@ export default function HomeScreen() {
             source={require("@/assets/images/home/map1/coin-icon.png")}
             style={styles.coinIconImage}
           />
+          <ThemedText style={styles.coinText}>360</ThemedText>
         </View>
         <View style={styles.bottomNav}>
           <Pressable style={styles.navItem}>
@@ -294,4 +295,11 @@ const styles = StyleSheet.create({
     color: "#111111",
     fontSize: 12,
   },
+  coinText: {
+    position: "absolute",
+    bottom: 6,
+    color: "#585555",
+    fontSize: 18,
+    fontWeight: "800",
+  }
 });

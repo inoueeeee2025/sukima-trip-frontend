@@ -28,6 +28,7 @@ export default function HomeScreen() {
     useState<TodayMovementResponse | null>(null);
   const [isMovementLoading, setIsMovementLoading] = useState(true);
   const [isExploreMode, setIsExploreMode] = useState(false);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
 
   useEffect(() => {
     async function loadHomeData() {
@@ -130,6 +131,21 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
+        {isDashboardOpen ? (
+          <View style={styles.dashboardOverlay}>
+            <View style = {styles.dashboardPanel}>
+              <Pressable
+                style={styles.dashboardCloseButton}
+                onPress={() => setIsDashboardOpen(false)}
+              >
+                <ThemedText style={styles.dashboardCloseText}>x</ThemedText>
+               </Pressable>
+
+               <ThemedText type="title">Dashboard</ThemedText>
+          </View>
+          </View>
+        ):null}
+
         <View style={styles.bottomNav}>
           <Pressable
             style={styles.navItem}
@@ -156,7 +172,7 @@ export default function HomeScreen() {
 
           <Pressable
             style={styles.navItem}
-            onPress={() => router.push("/(tabs)/profile")}
+            onPress={() => setIsDashboardOpen(true)}
           >
             <View style={styles.passportIconWrap}>
               <Image
@@ -344,4 +360,37 @@ const styles = StyleSheet.create({
     height: 80,
     resizeMode: "contain",
   },
+  dashboardOverlay: {
+  ...StyleSheet.absoluteFillObject,
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "rgba(0, 0, 0, 0.25)",
+  zIndex: 10,
+},
+dashboardPanel: {
+  width: "88%",
+  minHeight: 360,
+  padding: 20,
+  borderRadius: 24,
+  backgroundColor: "#fff7dc",
+  borderWidth: 3,
+  borderColor: "#9e171a",
+  gap: 12,
+},
+dashboardCloseButton: {
+  position: "absolute",
+  top: 12,
+  right: 12,
+  width: 32,
+  height: 32,
+  borderRadius: 16,
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "#ffffff",
+},
+dashboardCloseText: {
+  color: "#111111",
+  fontSize: 22,
+  fontWeight: "800",
+},
 });

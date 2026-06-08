@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import {
   ActivityIndicator,
+  Image,
+  ImageBackground,
   Pressable,
   SafeAreaView,
   StyleSheet,
@@ -25,6 +27,7 @@ export default function HomeScreen() {
   const [todayMovement, setTodayMovement] =
     useState<TodayMovementResponse | null>(null);
   const [isMovementLoading, setIsMovementLoading] = useState(true);
+  const [isExploreMode, setIsExploreMode] = useState(false);
 
   useEffect(() => {
     async function loadHomeData() {
@@ -81,61 +84,94 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.hero}>
-          <ThemedText type="title">Sukima Trip</ThemedText>
-          <ThemedText style={styles.description}>
-            すきま時間の移動やスポット記録をここから見ていきます。
-          </ThemedText>
-        </View>
+      <ImageBackground
+        source={
+          isExploreMode
+            ? require("@/assets/images/home/map3/map-explore-background.png")
+            : require("@/assets/images/home/map1/map-background.png")
+        }
+        style={styles.mapArea}
+        resizeMode="cover"
+      >
+        <View style={styles.topBar} />
 
-        <Pressable
-          style={styles.sectionCard}
-          onPress={() => router.push("/(tabs)/profile")}
-        >
-          <ThemedText type="defaultSemiBold">プロフィール</ThemedText>
-          {isProfileLoading ? (
-            <ThemedText>読み込み中です...</ThemedText>
-          ) : profile ? (
-            <ThemedText>名前: {profile.name}</ThemedText>
-          ) : (
-            <ThemedText>プロフィール画面で確認します。</ThemedText>
-          )}
-        </Pressable>
+        <View style={styles.distanceBadge}>
+          <Image
+            source={require("@/assets/images/home/map2/footprint-icon.png")}
+            style={styles.footprintIcon}
+          />
 
-        <View style={styles.sectionCard}>
-          <ThemedText type="defaultSemiBold">移動データ</ThemedText>
           {isMovementLoading ? (
-            <ThemedText>読み込み中です...</ThemedText>
-          ) : todayMovement ? (
-            <>
-              <ThemedText>
-                実移動距離：{todayMovement.real_distance_km}km
-              </ThemedText>
-              <ThemedText>
-                仮想移動距離：{todayMovement.virtual_distance_km}km
-              </ThemedText>
-              <ThemedText>
-                使用済み仮想距離：{todayMovement.used_virtual_distance_km}km
-              </ThemedText>
-              <ThemedText>
-                残り距離：{todayMovement.remaining_distance_km}km
-              </ThemedText>
-            </>
+            <ThemedText style={styles.distanceText}>...</ThemedText>
           ) : (
-            <ThemedText>移動データを取得できませんでした</ThemedText>
+            <ThemedText style={styles.distanceText}>
+              {todayMovement?.real_distance_km ?? 0}
+            </ThemedText>
           )}
+
+          <ThemedText style={styles.distanceUnit}>km</ThemedText>
         </View>
 
-        <View style={styles.sectionCard}>
-          <ThemedText type="defaultSemiBold">スポット</ThemedText>
-          <ThemedText>Spots 一覧や visited 情報につなげていきます。</ThemedText>
+        <View style={styles.coinArea}>
+          <Image
+            source={require("@/assets/images/home/map1/coin-badge.png")}
+            style={styles.coinBadgeImage}
+          />
+          <Image
+            source={require("@/assets/images/home/map1/coin-icon.png")}
+            style={styles.coinIconImage}
+          />
+          <ThemedText style={styles.coinText}>360</ThemedText>
         </View>
 
-        <Pressable onPress={handleLogout} style={styles.logoutButton}>
-          <ThemedText style={styles.buttonText}>ログアウト</ThemedText>
-        </Pressable>
-      </View>
+        {isExploreMode ? (
+          <View style={styles.statusPill}>
+            <ThemedText style={styles.statusText}>＜探索モード中＞</ThemedText>
+          </View>
+        ) : null}
+
+        <View style={styles.bottomNav}>
+          <Pressable
+            style={styles.navItem}
+            onPress={() => setIsExploreMode((current) => !current)}
+          >
+            <View style={styles.exploreIconWrap}>
+              <Image
+                source={require("@/assets/images/home/map1/explore-icon.png")}
+                style={styles.exploreIconBase}
+              />
+              <Image
+                source={
+                  isExploreMode
+                    ? require("@/assets/images/home/map3/walking-icon.png")
+                    : require("@/assets/images/home/map1/explore-character.png")
+                }
+                style={
+                  isExploreMode ? styles.walkingIcon : styles.exploreCharacter
+                }
+              />
+            </View>
+            <ThemedText style={styles.navLabel}>探索モード</ThemedText>
+          </Pressable>
+
+          <Pressable
+            style={styles.navItem}
+            onPress={() => router.push("/(tabs)/profile")}
+          >
+            <View style={styles.passportIconWrap}>
+              <Image
+                source={require("@/assets/images/home/map1/explore-icon.png")}
+                style={styles.passportIconBase}
+              />
+              <Image
+                source={require("@/assets/images/home/map1/passport-icon.png")}
+                style={styles.passportImage}
+              />
+            </View>
+            <ThemedText style={styles.navLabel}>マイページ</ThemedText>
+          </Pressable>
+        </View>
+      </ImageBackground>
     </SafeAreaView>
   );
 }
@@ -143,38 +179,169 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f7f4ed",
+    backgroundColor: "#60d0e5",
   },
   content: {
     flex: 1,
     justifyContent: "center",
-    paddingHorizontal: 24,
-    gap: 24,
+    alignItems: "center",
+    gap: 16,
   },
-  description: {
-    color: "#5f5a52",
+  mapArea: {
+    flex: 1,
+    position: "relative",
+    overflow: "hidden",
   },
-
-  buttonText: {
-    color: "#ffffff",
-    fontWeight: "600",
+  topBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 54,
+    backgroundColor: "rgba(255, 255, 255, 0.4)",
   },
-  hero: {
-    gap: 8,
-  },
-  sectionCard: {
-    gap: 8,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#d5cec3",
-  },
-  logoutButton: {
+  distanceBadge: {
+    position: "absolute",
+    top: 61,
+    alignSelf: "center",
+    width: 160,
+    height: 48,
+    borderRadius: 20,
+    borderWidth: 4,
+    borderColor: "#9e171a",
+    backgroundColor: "#f6ebc6",
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 12,
-    paddingVertical: 14,
-    backgroundColor: "#1f6f5f",
+    gap: 6,
+  },
+  footprintIcon: {
+    width: 32,
+    height: 32,
+    resizeMode: "contain",
+  },
+  distanceText: {
+    color: "#111111",
+    fontSize: 28,
+    fontWeight: "800",
+  },
+  distanceUnit: {
+    color: "#111111",
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  coinArea: {
+    position: "absolute",
+    top: 56,
+    right: 8,
+    width: 67,
+    height: 60,
+    alignItems: "center",
+  },
+  coinBadgeImage: {
+    position: "absolute",
+    bottom: 0,
+    width: 67,
+    height: 41,
+    resizeMode: "contain",
+  },
+  coinIconImage: {
+    position: "absolute",
+    top: 0,
+    width: 37,
+    height: 36,
+    resizeMode: "contain",
+  },
+  bottomNav: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 65,
+    backgroundColor: "#ffffff",
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-around",
+    paddingBottom: 6,
+  },
+  navItem: {
+    width: 120,
+    alignItems: "center",
+    gap: 4,
+  },
+  exploreIconWrap: {
+    width: 100,
+    height: 107,
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+  exploreIconBase: {
+    position: "absolute",
+    bottom: 0,
+    width: 100,
+    height: 107,
+    resizeMode: "contain",
+  },
+  exploreCharacter: {
+    position: "absolute",
+    bottom: 25,
+    width: 43,
+    height: 77,
+    resizeMode: "contain",
+  },
+  passportIconWrap: {
+    width: 100,
+    height: 107,
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+  passportIconBase: {
+    position: "absolute",
+    bottom: 0,
+    width: 100,
+    height: 107,
+    resizeMode: "contain",
+  },
+  passportImage: {
+    position: "absolute",
+    left: 4,
+    bottom: 10,
+    width: 100,
+    height: 100,
+    resizeMode: "contain",
+  },
+  navLabel: {
+    color: "#111111",
+    fontSize: 12,
+  },
+  coinText: {
+    position: "absolute",
+    bottom: 6,
+    color: "#585555",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  statusPill: {
+    position: "absolute",
+    bottom: 128,
+    alignSelf: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 6,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.75)",
+  },
+  statusText: {
+    color: "#333333",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  walkingIcon: {
+    position: "absolute",
+    bottom: 20,
+    width: 50,
+    height: 80,
+    resizeMode: "contain",
   },
 });

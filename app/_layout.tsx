@@ -6,11 +6,20 @@ import {
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
+import { useFonts } from "expo-font";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+
+    const [loaded] = useFonts({
+    NotoSerifJP: require("@/assets/fonts/NotoSerifJP-VariableFont_wght.ttf"),
+  });
+
+  if (!loaded) {
+    return null;
+  }
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>

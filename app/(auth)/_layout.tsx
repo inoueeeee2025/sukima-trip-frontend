@@ -2,6 +2,7 @@ import { Redirect, Stack } from "expo-router";
 import { ActivityIndicator, SafeAreaView, View } from "react-native";
 
 import { useAuth } from "@/components/auth/use-auth";
+import { useFonts } from "expo-font";
 
 export default function AuthLayout() {
   const { isLoggedIn, isCheckingAuth } = useAuth();
@@ -14,6 +15,8 @@ export default function AuthLayout() {
         </View>
       </SafeAreaView>
     );
+
+    
   }
 
   if (isLoggedIn) {
@@ -22,3 +25,4 @@ export default function AuthLayout() {
 
   return <Stack screenOptions={{ headerShown: false }} />;
 }
+

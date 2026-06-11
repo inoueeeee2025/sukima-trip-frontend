@@ -12,12 +12,14 @@ import {
 
 import { ThemedText } from "@/components/themed-text";
 import { useAuth } from "@/components/auth/use-auth";
+import { DashboardPassport } from "@/components/dashboard/dashboard-passport";
 import { getProfile, ProfileResponse } from "@/api/profile";
 import { getAccessToken } from "@/components/auth/auth-storage";
 import {
   getTodayMovements,
   getTotalMovements,
   TodayMovementResponse,
+  TotalMovementResponse,
 } from "@/api/movements";
 
 export default function HomeScreen() {
@@ -26,8 +28,19 @@ export default function HomeScreen() {
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [todayMovement, setTodayMovement] =
     useState<TodayMovementResponse | null>(null);
+  const [totalMovement, setTotalMovement] =
+    useState<TotalMovementResponse | null>(null);
   const [isMovementLoading, setIsMovementLoading] = useState(true);
   const [isExploreMode, setIsExploreMode] = useState(false);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+
+  async function handleLogout() {
+    await logoutUser();
+    setIsDashboardOpen(false);
+    setProfile(null);
+    setTodayMovement(null);
+    setTotalMovement(null);
+  }
 
   useEffect(() => {
     async function loadHomeData() {
@@ -37,6 +50,7 @@ export default function HomeScreen() {
         if (!token) {
           setProfile(null);
           setTodayMovement(null);
+          setTotalMovement(null);
           return;
         }
         //1.プロフィールを取得
@@ -50,10 +64,12 @@ export default function HomeScreen() {
 
         const totalMovementResult = await getTotalMovements(token);
         console.log("totalMovementResult", totalMovementResult);
+        setTotalMovement(totalMovementResult);
       } catch (error) {
         console.error("ホームデータ取得に失敗しました", error);
         setProfile(null);
         setTodayMovement(null);
+        setTotalMovement(null);
       } finally {
         setIsProfileLoading(false);
         setIsMovementLoading(false);
@@ -63,9 +79,7 @@ export default function HomeScreen() {
     loadHomeData();
   }, []); //ホーム画面が開いた時にプロフィール取得が走る、tokenを読んで/profileを叩く、結果をprofile　stateに入れる
 
-  async function handleLogout() {
-    await logoutUser();
-  }
+ 
 
   if (isCheckingAuth) {
     return (
@@ -130,6 +144,19 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
+        {isDashboardOpen ? (
+          <View style={styles.dashboardOverlay}>
+            <Pressable
+              style={styles.dashboardBackdrop}
+              onPress={() => setIsDashboardOpen(false)}
+            />
+            <DashboardPassport
+              totalMovement={totalMovement}
+              onLogout={handleLogout}
+            />
+          </View>
+        ) : null}
+
         <View style={styles.bottomNav}>
           <Pressable
             style={styles.navItem}
@@ -156,7 +183,7 @@ export default function HomeScreen() {
 
           <Pressable
             style={styles.navItem}
-            onPress={() => router.push("/(tabs)/profile")}
+            onPress={() => setIsDashboardOpen((current) => !current)}
           >
             <View style={styles.passportIconWrap}>
               <Image
@@ -164,7 +191,11 @@ export default function HomeScreen() {
                 style={styles.passportIconBase}
               />
               <Image
-                source={require("@/assets/images/home/map1/passport-icon.png")}
+                source={
+                  isDashboardOpen
+                    ? require("@/assets/images/dashboard/passport-selected-icon.png")
+                    : require("@/assets/images/home/map1/passport-icon.png")
+                }
                 style={styles.passportImage}
               />
             </View>
@@ -263,6 +294,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     justifyContent: "space-around",
     paddingBottom: 6,
+    zIndex: 20,
   },
   navItem: {
     width: 120,
@@ -306,10 +338,10 @@ const styles = StyleSheet.create({
   },
   passportImage: {
     position: "absolute",
-    left: 4,
-    bottom: 10,
-    width: 100,
-    height: 100,
+    left: -2,
+    bottom: 8,
+    width: 112,
+    height: 112,
     resizeMode: "contain",
   },
   navLabel: {
@@ -343,5 +375,15 @@ const styles = StyleSheet.create({
     width: 50,
     height: 80,
     resizeMode: "contain",
+  },
+  dashboardOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  dashboardBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.25)",
   },
 });

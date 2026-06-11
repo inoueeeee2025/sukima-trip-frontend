@@ -1,8 +1,20 @@
 import { Image, Pressable, StyleSheet, View } from "react-native";
 
+import { TotalMovementResponse } from "@/api/movements";
 import { ThemedText } from "@/components/themed-text";
 
-export function DashboardPassport() {
+type DashboardPassportProps = {
+  totalMovement: TotalMovementResponse | null;
+  onLogout: () => void;
+};
+
+export function DashboardPassport({
+  totalMovement,
+  onLogout,
+}: DashboardPassportProps) {
+  const totalDistanceKm =
+    totalMovement?.total_real_distance_km.toLocaleString() ?? "-";
+
   return (
     <View style={styles.dashboardPanel}>
       <Image
@@ -54,13 +66,19 @@ export function DashboardPassport() {
             <ThemedText style={styles.dashboardSmallText}>
               --- 通算移動記録 ---
             </ThemedText>
-            <ThemedText style={styles.totalDistanceText}>1,1900 km</ThemedText>
+            <ThemedText style={styles.totalDistanceText}>
+              {totalDistanceKm} km
+            </ThemedText>
           </View>
         </View>
       </View>
 
       <Pressable style={styles.profileEditButton}>
         <ThemedText style={styles.profileEditText}>プロフィール変更</ThemedText>
+      </Pressable>
+
+      <Pressable style={styles.logoutButton} onPress={onLogout}>
+        <ThemedText style={styles.logoutText}>ログアウト</ThemedText>
       </Pressable>
     </View>
   );
@@ -194,6 +212,20 @@ const styles = StyleSheet.create({
   profileEditText: {
     color: "#111111",
     fontSize: 18,
+    fontWeight: "700",
+    fontFamily: "NotoSerifJP",
+  },
+  logoutButton: {
+    width: "52%",
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    alignItems: "center",
+    zIndex: 1,
+  },
+  logoutText: {
+    color: "#9e171a",
+    fontSize: 14,
     fontWeight: "700",
     fontFamily: "NotoSerifJP",
   },

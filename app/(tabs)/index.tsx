@@ -19,6 +19,7 @@ import {
   getTodayMovements,
   getTotalMovements,
   TodayMovementResponse,
+  TotalMovementResponse,
 } from "@/api/movements";
 
 export default function HomeScreen() {
@@ -27,9 +28,19 @@ export default function HomeScreen() {
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [todayMovement, setTodayMovement] =
     useState<TodayMovementResponse | null>(null);
+  const [totalMovement, setTotalMovement] =
+    useState<TotalMovementResponse | null>(null);
   const [isMovementLoading, setIsMovementLoading] = useState(true);
   const [isExploreMode, setIsExploreMode] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+
+  async function handleLogout() {
+    await logoutUser();
+    setIsDashboardOpen(false);
+    setProfile(null);
+    setTodayMovement(null);
+    setTotalMovement(null);
+  }
 
   useEffect(() => {
     async function loadHomeData() {
@@ -39,6 +50,7 @@ export default function HomeScreen() {
         if (!token) {
           setProfile(null);
           setTodayMovement(null);
+          setTotalMovement(null);
           return;
         }
         //1.プロフィールを取得
@@ -52,10 +64,12 @@ export default function HomeScreen() {
 
         const totalMovementResult = await getTotalMovements(token);
         console.log("totalMovementResult", totalMovementResult);
+        setTotalMovement(totalMovementResult);
       } catch (error) {
         console.error("ホームデータ取得に失敗しました", error);
         setProfile(null);
         setTodayMovement(null);
+        setTotalMovement(null);
       } finally {
         setIsProfileLoading(false);
         setIsMovementLoading(false);
@@ -136,7 +150,10 @@ export default function HomeScreen() {
               style={styles.dashboardBackdrop}
               onPress={() => setIsDashboardOpen(false)}
             />
-            <DashboardPassport />
+            <DashboardPassport
+              totalMovement={totalMovement}
+              onLogout={handleLogout}
+            />
           </View>
         ) : null}
 

@@ -40,6 +40,7 @@ export default function HomeScreen() {
     useState<TotalMovementResponse | null>(null);
   const [isMovementLoading, setIsMovementLoading] = useState(true);
   const [isExploreMode, setIsExploreMode] = useState(false);
+  const [isWalkMode, setIsWalkMode] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [selectedLandingPoint, setSelectedLandingPoint] =
     useState<LandingPoint | null>(null);
@@ -78,6 +79,21 @@ export default function HomeScreen() {
       longitude: null,
       name: "選択地点",
     });
+  }
+
+  function handleConfirmLandingPoint() {
+    if (!selectedLandingPoint) {
+      return;
+    }
+
+    console.log("confirmLandingPoint", selectedLandingPoint);
+
+    setIsWalkMode(true);
+    setIsExploreMode(false);
+  }
+
+  function handleCancelLandingPoint() {
+    setSelectedLandingPoint(null);
   }
 
   useEffect(() => {
@@ -198,10 +214,30 @@ export default function HomeScreen() {
               <ThemedText style={styles.landingConfirmText}>
                 この地点に降り立ちますか？
               </ThemedText>
+
+              <View style={styles.landingConfirmActions}>
+                <Pressable
+                  style={styles.landingYesButton}
+                  onPress={handleConfirmLandingPoint}
+                >
+                  <ThemedText style={styles.landingYesButtonText}>
+                    はい
+                  </ThemedText>
+                </Pressable>
+
+                <Pressable
+                  style={styles.landingNoButton}
+                  onPress={handleCancelLandingPoint}
+                >
+                  <ThemedText style={styles.landingNoButtonText}>
+                    いいえ
+                  </ThemedText>
+                </Pressable>
+              </View>
             </View>
           </>
         ) : null}
-        
+
         {isDashboardOpen ? (
           <View style={styles.dashboardOverlay}>
             <Pressable
@@ -465,6 +501,37 @@ const styles = StyleSheet.create({
   },
   landingConfirmText: {
     color: "#333333",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  landingConfirmActions: {
+    marginTop: 10,
+    flexDirection: "row",
+    gap: 12,
+  },
+  landingYesButton: {
+    minWidth: 72,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "#9e171a",
+    alignItems: "center",
+  },
+  landingYesButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  landingNoButton: {
+    minWidth: 72,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#9e171a",
+    alignItems: "center",
+  },
+  landingNoButtonText: {
+    color: "#9e171a",
     fontSize: 14,
     fontWeight: "700",
   },

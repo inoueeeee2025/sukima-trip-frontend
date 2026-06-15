@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { router } from "expo-router";
 import {
   ActivityIndicator,
+  GestureResponderEvent,
   Image,
   ImageBackground,
   Pressable,
@@ -10,17 +10,25 @@ import {
   View,
 } from "react-native";
 
-import { ThemedText } from "@/components/themed-text";
-import { useAuth } from "@/components/auth/use-auth";
-import { DashboardPassport } from "@/components/dashboard/dashboard-passport";
-import { getProfile, ProfileResponse } from "@/api/profile";
-import { getAccessToken } from "@/components/auth/auth-storage";
 import {
   getTodayMovements,
   getTotalMovements,
   TodayMovementResponse,
   TotalMovementResponse,
 } from "@/api/movements";
+import { getProfile, ProfileResponse } from "@/api/profile";
+import { getAccessToken } from "@/components/auth/auth-storage";
+import { useAuth } from "@/components/auth/use-auth";
+import { DashboardPassport } from "@/components/dashboard/dashboard-passport";
+import { ThemedText } from "@/components/themed-text";
+
+type LandingPoint = {
+  screenX: number;
+  screenY: number;
+  latitude: number | null;
+  longitude: number | null;
+  name: string;
+};
 
 export default function HomeScreen() {
   const { isLoggedIn, isCheckingAuth, logoutUser } = useAuth();
@@ -32,14 +40,60 @@ export default function HomeScreen() {
     useState<TotalMovementResponse | null>(null);
   const [isMovementLoading, setIsMovementLoading] = useState(true);
   const [isExploreMode, setIsExploreMode] = useState(false);
+  const [isWalkMode, setIsWalkMode] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [selectedLandingPoint, setSelectedLandingPoint] =
+    useState<LandingPoint | null>(null);
+
+  const hasSelectedLandingPoint = selectedLandingPoint !== null;
 
   async function handleLogout() {
     await logoutUser();
     setIsDashboardOpen(false);
+    setIsExploreMode(false);
+    setSelectedLandingPoint(null);
     setProfile(null);
     setTodayMovement(null);
     setTotalMovement(null);
+  }
+
+  function handleSelectLandingPoint(event: GestureResponderEvent) {
+    if (!isExploreMode) {
+      return;
+    }
+
+    const { locationX, locationY } = event.nativeEvent;
+
+    setSelectedLandingPoint({
+      screenX: locationX,
+      screenY: locationY,
+      latitude: null,
+      longitude: null,
+      name: "選択地点",
+    });
+
+    console.log("selectedLandingPoint", {
+      screenX: locationX,
+      screenY: locationY,
+      latitude: null,
+      longitude: null,
+      name: "選択地点",
+    });
+  }
+
+  function handleConfirmLandingPoint() {
+    if (!selectedLandingPoint) {
+      return;
+    }
+
+    console.log("confirmLandingPoint", selectedLandingPoint);
+
+    setIsWalkMode(true);
+    setIsExploreMode(false);
+  }
+
+  function handleCancelLandingPoint() {
+    setSelectedLandingPoint(null);
   }
 
   useEffect(() => {
@@ -79,8 +133,6 @@ export default function HomeScreen() {
     loadHomeData();
   }, []); //ホーム画面が開いた時にプロフィール取得が走る、tokenを読んで/profileを叩く、結果をprofile　stateに入れる
 
- 
-
   if (isCheckingAuth) {
     return (
       <SafeAreaView style={styles.container}>
@@ -107,8 +159,11 @@ export default function HomeScreen() {
         style={styles.mapArea}
         resizeMode="cover"
       >
+        <Pressable
+          style={styles.mapSelectLayer}
+          onPress={handleSelectLandingPoint}
+        />
         <View style={styles.topBar} />
-
         <View style={styles.distanceBadge}>
           <Image
             source={require("@/assets/images/home/map2/footprint-icon.png")}
@@ -125,7 +180,6 @@ export default function HomeScreen() {
 
           <ThemedText style={styles.distanceUnit}>km</ThemedText>
         </View>
-
         <View style={styles.coinArea}>
           <Image
             source={require("@/assets/images/home/map1/coin-badge.png")}
@@ -137,11 +191,51 @@ export default function HomeScreen() {
           />
           <ThemedText style={styles.coinText}>360</ThemedText>
         </View>
-
         {isExploreMode ? (
           <View style={styles.statusPill}>
             <ThemedText style={styles.statusText}>＜探索モード中＞</ThemedText>
           </View>
+        ) : null}
+        {isExploreMode && hasSelectedLandingPoint && selectedLandingPoint ? (
+          <>
+            <View
+              style={[
+                styles.landingPin,
+                {
+                  left: selectedLandingPoint.screenX - 12,
+                  top: selectedLandingPoint.screenY - 24,
+                },
+              ]}
+            >
+              <ThemedText style={styles.landingPinText}>📍</ThemedText>
+            </View>
+
+            <View style={styles.landingConfirm}>
+              <ThemedText style={styles.landingConfirmText}>
+                この地点に降り立ちますか？
+              </ThemedText>
+
+              <View style={styles.landingConfirmActions}>
+                <Pressable
+                  style={styles.landingYesButton}
+                  onPress={handleConfirmLandingPoint}
+                >
+                  <ThemedText style={styles.landingYesButtonText}>
+                    はい
+                  </ThemedText>
+                </Pressable>
+
+                <Pressable
+                  style={styles.landingNoButton}
+                  onPress={handleCancelLandingPoint}
+                >
+                  <ThemedText style={styles.landingNoButtonText}>
+                    いいえ
+                  </ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          </>
         ) : null}
 
         {isDashboardOpen ? (
@@ -156,11 +250,20 @@ export default function HomeScreen() {
             />
           </View>
         ) : null}
-
         <View style={styles.bottomNav}>
           <Pressable
             style={styles.navItem}
-            onPress={() => setIsExploreMode((current) => !current)}
+            onPress={() => {
+              setIsExploreMode((current) => {
+                const next = !current;
+
+                if (!next) {
+                  setSelectedLandingPoint(null);
+                }
+
+                return next;
+              });
+            }}
           >
             <View style={styles.exploreIconWrap}>
               <Image
@@ -222,6 +325,10 @@ const styles = StyleSheet.create({
     flex: 1,
     position: "relative",
     overflow: "hidden",
+  },
+  mapSelectLayer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
   },
   topBar: {
     position: "absolute",
@@ -368,6 +475,65 @@ const styles = StyleSheet.create({
     color: "#333333",
     fontSize: 14,
     fontWeight: "600",
+  },
+  landingPin: {
+    position: "absolute",
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 8,
+  },
+  landingPinText: {
+    fontSize: 24,
+  },
+  landingConfirm: {
+    position: "absolute",
+    left: 32,
+    right: 32,
+    bottom: 154,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    alignItems: "center",
+    zIndex: 8,
+  },
+  landingConfirmText: {
+    color: "#333333",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  landingConfirmActions: {
+    marginTop: 10,
+    flexDirection: "row",
+    gap: 12,
+  },
+  landingYesButton: {
+    minWidth: 72,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "#9e171a",
+    alignItems: "center",
+  },
+  landingYesButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  landingNoButton: {
+    minWidth: 72,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#9e171a",
+    alignItems: "center",
+  },
+  landingNoButtonText: {
+    color: "#9e171a",
+    fontSize: 14,
+    fontWeight: "700",
   },
   walkingIcon: {
     position: "absolute",

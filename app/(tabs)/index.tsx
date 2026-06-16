@@ -30,6 +30,19 @@ type LandingPoint = {
   name: string;
 };
 
+type TripPoint = {
+  name: string;
+  latitude: number;
+  longitude: number;
+};
+
+type VirtualTripState = {
+  startPoint: TripPoint | null;
+  currentPoint: TripPoint;
+  goalPoint: TripPoint | null;
+  usedVirtualDistanceKm: number;
+  remainingDistanceKm: number | null;
+};
 export default function HomeScreen() {
   const { isLoggedIn, isCheckingAuth, logoutUser } = useAuth();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
@@ -44,6 +57,17 @@ export default function HomeScreen() {
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [selectedLandingPoint, setSelectedLandingPoint] =
     useState<LandingPoint | null>(null);
+  const [virtualTrip, setVirtualTrip] = useState<VirtualTripState>({
+    startPoint: null,
+    currentPoint: {
+      name: "現在地未設定",
+      latitude: 0,
+      longitude: 0,
+    },
+    goalPoint: null,
+    usedVirtualDistanceKm: 0,
+    remainingDistanceKm: null,
+  });
 
   const hasSelectedLandingPoint = selectedLandingPoint !== null;
 
@@ -51,7 +75,19 @@ export default function HomeScreen() {
     await logoutUser();
     setIsDashboardOpen(false);
     setIsExploreMode(false);
+    setIsWalkMode(false);
     setSelectedLandingPoint(null);
+    setVirtualTrip({
+      startPoint: null,
+      currentPoint: {
+        name: "現在地未設定",
+        latitude: 0,
+        longitude: 0,
+      },
+      goalPoint: null,
+      usedVirtualDistanceKm: 0,
+      remainingDistanceKm: null,
+    });
     setProfile(null);
     setTodayMovement(null);
     setTotalMovement(null);
@@ -88,6 +124,21 @@ export default function HomeScreen() {
 
     console.log("confirmLandingPoint", selectedLandingPoint);
 
+    //選択された地点をTripPointとして作成
+    const startPoint: TripPoint = {
+      name: selectedLandingPoint.name,
+      latitude: selectedLandingPoint.latitude ?? 0,
+      longitude: selectedLandingPoint.longitude ?? 0,
+    };
+
+    //virtualTripのstartPoint / currentPointを更新
+    setVirtualTrip((current) => ({
+      ...current,
+      startPoint,
+      currentPoint: startPoint,
+    }));
+
+    //walk modeに切り替え、explore modeを終了
     setIsWalkMode(true);
     setIsExploreMode(false);
   }
@@ -115,6 +166,9 @@ export default function HomeScreen() {
         const movementResult = await getTodayMovements(token);
         console.log("movementResult", movementResult);
         setTodayMovement(movementResult);
+
+        //今後ここで、movementResult.real_distance_kmを
+        //virtualTrip.usedDistanceKmやremainingDistanceKmに反映する
 
         const totalMovementResult = await getTotalMovements(token);
         console.log("totalMovementResult", totalMovementResult);

@@ -21,6 +21,7 @@ import { getAccessToken } from "@/components/auth/auth-storage";
 import { useAuth } from "@/components/auth/use-auth";
 import { DashboardPassport } from "@/components/dashboard/dashboard-passport";
 import { ThemedText } from "@/components/themed-text";
+import { StreetViewPanel } from "@/components/street-view/street-view-panel";
 
 type LandingPoint = {
   screenX: number;
@@ -30,6 +31,19 @@ type LandingPoint = {
   name: string;
 };
 
+type TripPoint = {
+  name: string;
+  latitude: number;
+  longitude: number;
+};
+
+type VirtualTripState = {
+  startPoint: TripPoint | null;
+  currentPoint: TripPoint;
+  goalPoint: TripPoint | null;
+  usedVirtualDistanceKm: number;
+  remainingDistanceKm: number | null;
+};
 export default function HomeScreen() {
   const { isLoggedIn, isCheckingAuth, logoutUser } = useAuth();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
@@ -44,6 +58,17 @@ export default function HomeScreen() {
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [selectedLandingPoint, setSelectedLandingPoint] =
     useState<LandingPoint | null>(null);
+  const [virtualTrip, setVirtualTrip] = useState<VirtualTripState>({
+    startPoint: null,
+    currentPoint: {
+      name: "現在地未設定",
+      latitude: 0,
+      longitude: 0,
+    },
+    goalPoint: null,
+    usedVirtualDistanceKm: 0,
+    remainingDistanceKm: null,
+  });
 
   const hasSelectedLandingPoint = selectedLandingPoint !== null;
 
@@ -51,11 +76,29 @@ export default function HomeScreen() {
     await logoutUser();
     setIsDashboardOpen(false);
     setIsExploreMode(false);
+    setIsWalkMode(false);
     setSelectedLandingPoint(null);
+    setVirtualTrip({
+      startPoint: null,
+      currentPoint: {
+        name: "現在地未設定",
+        latitude: 0,
+        longitude: 0,
+      },
+      goalPoint: null,
+      usedVirtualDistanceKm: 0,
+      remainingDistanceKm: null,
+    });
     setProfile(null);
     setTodayMovement(null);
     setTotalMovement(null);
   }
+
+  const TEST_LANDING_POINT: TripPoint = {
+    name: "渋谷スクランブル交差点",
+    latitude: 35.659494,
+    longitude: 139.700545,
+  };
 
   function handleSelectLandingPoint(event: GestureResponderEvent) {
     if (!isExploreMode) {
@@ -67,17 +110,17 @@ export default function HomeScreen() {
     setSelectedLandingPoint({
       screenX: locationX,
       screenY: locationY,
-      latitude: null,
-      longitude: null,
-      name: "選択地点",
+      latitude: TEST_LANDING_POINT.latitude,
+      longitude: TEST_LANDING_POINT.longitude,
+      name: TEST_LANDING_POINT.name,
     });
 
     console.log("selectedLandingPoint", {
       screenX: locationX,
       screenY: locationY,
-      latitude: null,
-      longitude: null,
-      name: "選択地点",
+      latitude: TEST_LANDING_POINT.latitude,
+      longitude: TEST_LANDING_POINT.longitude,
+      name: TEST_LANDING_POINT.name,
     });
   }
 
@@ -88,6 +131,21 @@ export default function HomeScreen() {
 
     console.log("confirmLandingPoint", selectedLandingPoint);
 
+    //選択された地点をTripPointとして作成
+    const startPoint: TripPoint = {
+      name: selectedLandingPoint.name,
+      latitude: selectedLandingPoint.latitude ?? 0,
+      longitude: selectedLandingPoint.longitude ?? 0,
+    };
+
+    //virtualTripのstartPoint / currentPointを更新
+    setVirtualTrip((current) => ({
+      ...current,
+      startPoint,
+      currentPoint: startPoint,
+    }));
+
+    //walk modeに切り替え、explore modeを終了
     setIsWalkMode(true);
     setIsExploreMode(false);
   }
@@ -115,6 +173,9 @@ export default function HomeScreen() {
         const movementResult = await getTodayMovements(token);
         console.log("movementResult", movementResult);
         setTodayMovement(movementResult);
+
+        //今後ここで、movementResult.real_distance_kmを
+        //virtualTrip.usedVirtualDistanceKmやremainingDistanceKmに反映する
 
         const totalMovementResult = await getTotalMovements(token);
         console.log("totalMovementResult", totalMovementResult);
@@ -150,162 +211,175 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ImageBackground
-        source={
-          isExploreMode
-            ? require("@/assets/images/home/map3/map-explore-background.png")
-            : require("@/assets/images/home/map1/map-background.png")
-        }
-        style={styles.mapArea}
-        resizeMode="cover"
-      >
-        <Pressable
-          style={styles.mapSelectLayer}
-          onPress={handleSelectLandingPoint}
-        />
-        <View style={styles.topBar} />
-        <View style={styles.distanceBadge}>
-          <Image
-            source={require("@/assets/images/home/map2/footprint-icon.png")}
-            style={styles.footprintIcon}
+      {isWalkMode ? (
+        //Walk Modeの時はstreet viewを表示
+        <View style={styles.mapArea}>
+          <StreetViewPanel
+            latitude={virtualTrip.currentPoint.latitude}
+            longitude={virtualTrip.currentPoint.longitude}
           />
-
-          {isMovementLoading ? (
-            <ThemedText style={styles.distanceText}>...</ThemedText>
-          ) : (
-            <ThemedText style={styles.distanceText}>
-              {todayMovement?.real_distance_km ?? 0}
-            </ThemedText>
-          )}
-
-          <ThemedText style={styles.distanceUnit}>km</ThemedText>
         </View>
-        <View style={styles.coinArea}>
-          <Image
-            source={require("@/assets/images/home/map1/coin-badge.png")}
-            style={styles.coinBadgeImage}
+      ) : (
+        //walk mode以外は既存の地図画像を表示
+        <ImageBackground
+          source={
+            isExploreMode
+              ? require("@/assets/images/home/map3/map-explore-background.png")
+              : require("@/assets/images/home/map1/map-background.png")
+          }
+          style={styles.mapArea}
+          resizeMode="cover"
+        >
+          <Pressable
+            style={styles.mapSelectLayer}
+            onPress={handleSelectLandingPoint}
           />
-          <Image
-            source={require("@/assets/images/home/map1/coin-icon.png")}
-            style={styles.coinIconImage}
-          />
-          <ThemedText style={styles.coinText}>360</ThemedText>
-        </View>
-        {isExploreMode ? (
-          <View style={styles.statusPill}>
-            <ThemedText style={styles.statusText}>＜探索モード中＞</ThemedText>
-          </View>
-        ) : null}
-        {isExploreMode && hasSelectedLandingPoint && selectedLandingPoint ? (
-          <>
-            <View
-              style={[
-                styles.landingPin,
-                {
-                  left: selectedLandingPoint.screenX - 12,
-                  top: selectedLandingPoint.screenY - 24,
-                },
-              ]}
-            >
-              <ThemedText style={styles.landingPinText}>📍</ThemedText>
-            </View>
+          <View style={styles.topBar} />
+          <View style={styles.distanceBadge}>
+            <Image
+              source={require("@/assets/images/home/map2/footprint-icon.png")}
+              style={styles.footprintIcon}
+            />
 
-            <View style={styles.landingConfirm}>
-              <ThemedText style={styles.landingConfirmText}>
-                この地点に降り立ちますか？
+            {isMovementLoading ? (
+              <ThemedText style={styles.distanceText}>...</ThemedText>
+            ) : (
+              <ThemedText style={styles.distanceText}>
+                {todayMovement?.real_distance_km ?? 0}
               </ThemedText>
+            )}
 
-              <View style={styles.landingConfirmActions}>
-                <Pressable
-                  style={styles.landingYesButton}
-                  onPress={handleConfirmLandingPoint}
-                >
-                  <ThemedText style={styles.landingYesButtonText}>
-                    はい
-                  </ThemedText>
-                </Pressable>
-
-                <Pressable
-                  style={styles.landingNoButton}
-                  onPress={handleCancelLandingPoint}
-                >
-                  <ThemedText style={styles.landingNoButtonText}>
-                    いいえ
-                  </ThemedText>
-                </Pressable>
-              </View>
-            </View>
-          </>
-        ) : null}
-
-        {isDashboardOpen ? (
-          <View style={styles.dashboardOverlay}>
-            <Pressable
-              style={styles.dashboardBackdrop}
-              onPress={() => setIsDashboardOpen(false)}
-            />
-            <DashboardPassport
-              totalMovement={totalMovement}
-              onLogout={handleLogout}
-            />
+            <ThemedText style={styles.distanceUnit}>km</ThemedText>
           </View>
-        ) : null}
-        <View style={styles.bottomNav}>
-          <Pressable
-            style={styles.navItem}
-            onPress={() => {
-              setIsExploreMode((current) => {
-                const next = !current;
+          <View style={styles.coinArea}>
+            <Image
+              source={require("@/assets/images/home/map1/coin-badge.png")}
+              style={styles.coinBadgeImage}
+            />
+            <Image
+              source={require("@/assets/images/home/map1/coin-icon.png")}
+              style={styles.coinIconImage}
+            />
+            <ThemedText style={styles.coinText}>360</ThemedText>
+          </View>
+          {isExploreMode ? (
+            <View style={styles.statusPill}>
+              <ThemedText style={styles.statusText}>
+                ＜探索モード中＞
+              </ThemedText>
+            </View>
+          ) : null}
+          {isExploreMode && hasSelectedLandingPoint && selectedLandingPoint ? (
+            <>
+              <View
+                style={[
+                  styles.landingPin,
+                  {
+                    left: selectedLandingPoint.screenX - 12,
+                    top: selectedLandingPoint.screenY - 24,
+                  },
+                ]}
+              >
+                <ThemedText style={styles.landingPinText}>📍</ThemedText>
+              </View>
 
-                if (!next) {
-                  setSelectedLandingPoint(null);
-                }
+              <View style={styles.landingConfirm}>
+                <ThemedText style={styles.landingConfirmText}>
+                  この地点に降り立ちますか？
+                </ThemedText>
 
-                return next;
-              });
-            }}
-          >
-            <View style={styles.exploreIconWrap}>
-              <Image
-                source={require("@/assets/images/home/map1/explore-icon.png")}
-                style={styles.exploreIconBase}
+                <View style={styles.landingConfirmActions}>
+                  <Pressable
+                    style={styles.landingYesButton}
+                    onPress={handleConfirmLandingPoint}
+                  >
+                    <ThemedText style={styles.landingYesButtonText}>
+                      はい
+                    </ThemedText>
+                  </Pressable>
+
+                  <Pressable
+                    style={styles.landingNoButton}
+                    onPress={handleCancelLandingPoint}
+                  >
+                    <ThemedText style={styles.landingNoButtonText}>
+                      いいえ
+                    </ThemedText>
+                  </Pressable>
+                </View>
+              </View>
+            </>
+          ) : null}
+
+          {isDashboardOpen ? (
+            <View style={styles.dashboardOverlay}>
+              <Pressable
+                style={styles.dashboardBackdrop}
+                onPress={() => setIsDashboardOpen(false)}
               />
-              <Image
-                source={
-                  isExploreMode
-                    ? require("@/assets/images/home/map3/walking-icon.png")
-                    : require("@/assets/images/home/map1/explore-character.png")
-                }
-                style={
-                  isExploreMode ? styles.walkingIcon : styles.exploreCharacter
-                }
+              <DashboardPassport
+                totalMovement={totalMovement}
+                onLogout={handleLogout}
               />
             </View>
-            <ThemedText style={styles.navLabel}>探索モード</ThemedText>
-          </Pressable>
+          ) : null}
+          <View style={styles.bottomNav}>
+            <Pressable
+              style={styles.navItem}
+              onPress={() => {
+                setIsExploreMode((current) => {
+                  const next = !current;
 
-          <Pressable
-            style={styles.navItem}
-            onPress={() => setIsDashboardOpen((current) => !current)}
-          >
-            <View style={styles.passportIconWrap}>
-              <Image
-                source={require("@/assets/images/home/map1/explore-icon.png")}
-                style={styles.passportIconBase}
-              />
-              <Image
-                source={
-                  isDashboardOpen
-                    ? require("@/assets/images/dashboard/passport-selected-icon.png")
-                    : require("@/assets/images/home/map1/passport-icon.png")
-                }
-                style={styles.passportImage}
-              />
-            </View>
-            <ThemedText style={styles.navLabel}>マイページ</ThemedText>
-          </Pressable>
-        </View>
-      </ImageBackground>
+                  if (!next) {
+                    setSelectedLandingPoint(null);
+                  }
+
+                  return next;
+                });
+              }}
+            >
+              <View style={styles.exploreIconWrap}>
+                <Image
+                  source={require("@/assets/images/home/map1/explore-icon.png")}
+                  style={styles.exploreIconBase}
+                />
+                <Image
+                  source={
+                    isExploreMode
+                      ? require("@/assets/images/home/map3/walking-icon.png")
+                      : require("@/assets/images/home/map1/explore-character.png")
+                  }
+                  style={
+                    isExploreMode ? styles.walkingIcon : styles.exploreCharacter
+                  }
+                />
+              </View>
+              <ThemedText style={styles.navLabel}>探索モード</ThemedText>
+            </Pressable>
+
+            <Pressable
+              style={styles.navItem}
+              onPress={() => setIsDashboardOpen((current) => !current)}
+            >
+              <View style={styles.passportIconWrap}>
+                <Image
+                  source={require("@/assets/images/home/map1/explore-icon.png")}
+                  style={styles.passportIconBase}
+                />
+                <Image
+                  source={
+                    isDashboardOpen
+                      ? require("@/assets/images/dashboard/passport-selected-icon.png")
+                      : require("@/assets/images/home/map1/passport-icon.png")
+                  }
+                  style={styles.passportImage}
+                />
+              </View>
+              <ThemedText style={styles.navLabel}>マイページ</ThemedText>
+            </Pressable>
+          </View>
+        </ImageBackground>
+      )}
     </SafeAreaView>
   );
 }

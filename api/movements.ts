@@ -2,6 +2,7 @@ import { apiRequest } from "@/api/client";
 
 //今日の移動データのレスポンス型
 export type TodayMovementResponse = {
+  date: string;
   real_distance_km: number;
   virtual_distance_km: number;
   used_virtual_distance_km: number;

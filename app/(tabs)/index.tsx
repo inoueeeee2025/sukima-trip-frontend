@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  GestureResponderEvent,
   Image,
   ImageBackground,
   Pressable,
@@ -29,6 +28,14 @@ type LandingPoint = {
   screenY: number;
   latitude: number | null;
   longitude: number | null;
+  name: string;
+};
+
+type LandingPointSelection = {
+  screenX: number;
+  screenY: number;
+  latitude: number;
+  longitude: number;
   name: string;
 };
 
@@ -101,28 +108,22 @@ export default function HomeScreen() {
     longitude: 139.700545,
   };
 
-  function handleSelectLandingPoint(event: GestureResponderEvent) {
+  function handleSelectLandingPoint(point: LandingPointSelection) {
     if (!isExploreMode) {
       return;
     }
 
-    const { locationX, locationY } = event.nativeEvent;
-
     setSelectedLandingPoint({
-      screenX: locationX,
-      screenY: locationY,
-      latitude: TEST_LANDING_POINT.latitude,
-      longitude: TEST_LANDING_POINT.longitude,
-      name: TEST_LANDING_POINT.name,
+      screenX: point.screenX,
+      screenY: point.screenY,
+      latitude: point.latitude,
+      longitude: point.longitude,
+      name: point.name,
     });
 
-    console.log("selectedLandingPoint", {
-      screenX: locationX,
-      screenY: locationY,
-      latitude: TEST_LANDING_POINT.latitude,
-      longitude: TEST_LANDING_POINT.longitude,
-      name: TEST_LANDING_POINT.name,
-    });
+  console.log("selectedLandingPoint", point);
+
+    console.log("selectedLandingPoint", point);
   }
 
   function handleConfirmLandingPoint() {
@@ -226,6 +227,7 @@ export default function HomeScreen() {
             <ExploreMapPanel
               latitude={TEST_LANDING_POINT.latitude}
               longitude={TEST_LANDING_POINT.longitude}
+              onSelectPoint={handleSelectLandingPoint}
             />
           ) : (
             <ImageBackground
@@ -234,10 +236,11 @@ export default function HomeScreen() {
               resizeMode="cover"
             />
           )}
-          <Pressable
-            style={styles.mapSelectLayer}
-            onPress={handleSelectLandingPoint}
-          />
+
+          {isExploreMode ? null : (
+            <Pressable style={styles.mapSelectLayer} onPress={() => {}} />
+          )}
+
           <View style={styles.topBar} />
           <View style={styles.distanceBadge}>
             <Image

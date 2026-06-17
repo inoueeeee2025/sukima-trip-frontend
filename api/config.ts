@@ -3,3 +3,6 @@ export const API_ORIGIN =
 
 export const API_BASE_URL = `${API_ORIGIN}/api`;
 export const AUTH_BASE_URL = `${API_ORIGIN}/auth`;
+
+export const GOOGLE_MAPS_API_KEY =
+  process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";

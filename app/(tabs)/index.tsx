@@ -21,6 +21,7 @@ import { getAccessToken } from "@/components/auth/auth-storage";
 import { useAuth } from "@/components/auth/use-auth";
 import { DashboardPassport } from "@/components/dashboard/dashboard-passport";
 import { ThemedText } from "@/components/themed-text";
+import { StreetViewPanel } from "@/components/street-view/street-view-panel";
 
 type LandingPoint = {
   screenX: number;
@@ -168,7 +169,7 @@ export default function HomeScreen() {
         setTodayMovement(movementResult);
 
         //今後ここで、movementResult.real_distance_kmを
-        //virtualTrip.usedDistanceKmやremainingDistanceKmに反映する
+        //virtualTrip.usedVirtualDistanceKmやremainingDistanceKmに反映する
 
         const totalMovementResult = await getTotalMovements(token);
         console.log("totalMovementResult", totalMovementResult);
@@ -204,6 +205,16 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {isWalkMode ? (
+        //Walk Modeの時はstreet viewを表示
+      <View style={styles.mapArea}>
+        <StreetViewPanel
+        latitude={35.681236}
+        longitude={139.767125}
+      />
+      </View>
+      ):(
+      //walk mode以外は既存の地図画像を表示
       <ImageBackground
         source={
           isExploreMode
@@ -360,6 +371,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
       </ImageBackground>
+      )}
     </SafeAreaView>
   );
 }

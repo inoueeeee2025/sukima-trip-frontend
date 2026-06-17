@@ -22,6 +22,7 @@ import { useAuth } from "@/components/auth/use-auth";
 import { DashboardPassport } from "@/components/dashboard/dashboard-passport";
 import { ThemedText } from "@/components/themed-text";
 import { StreetViewPanel } from "@/components/street-view/street-view-panel";
+import { ExploreMapPanel } from "@/components/explore-map/explore-map-panel";
 
 type LandingPoint = {
   screenX: number;
@@ -220,16 +221,19 @@ export default function HomeScreen() {
           />
         </View>
       ) : (
-        //walk mode以外は既存の地図画像を表示
-        <ImageBackground
-          source={
-            isExploreMode
-              ? require("@/assets/images/home/map3/map-explore-background.png")
-              : require("@/assets/images/home/map1/map-background.png")
-          }
-          style={styles.mapArea}
-          resizeMode="cover"
-        >
+        <View style={styles.mapArea}>
+          {isExploreMode ? (
+            <ExploreMapPanel
+              latitude={TEST_LANDING_POINT.latitude}
+              longitude={TEST_LANDING_POINT.longitude}
+            />
+          ) : (
+            <ImageBackground
+              source={require("@/assets/images/home/map1/map-background.png")}
+              style={styles.mapBackground}
+              resizeMode="cover"
+            />
+          )}
           <Pressable
             style={styles.mapSelectLayer}
             onPress={handleSelectLandingPoint}
@@ -375,10 +379,11 @@ export default function HomeScreen() {
                   style={styles.passportImage}
                 />
               </View>
+
               <ThemedText style={styles.navLabel}>マイページ</ThemedText>
             </Pressable>
           </View>
-        </ImageBackground>
+        </View>
       )}
     </SafeAreaView>
   );
@@ -399,6 +404,9 @@ const styles = StyleSheet.create({
     flex: 1,
     position: "relative",
     overflow: "hidden",
+  },
+  mapBackground: {
+    flex: 1,
   },
   mapSelectLayer: {
     ...StyleSheet.absoluteFillObject,

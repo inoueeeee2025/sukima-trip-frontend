@@ -44,7 +44,10 @@ export function StreetViewPanel({
             {
               position: { lat: ${latitude}, lng: ${longitude} },
               pov: { heading: 0, pitch: 0 },
-              zoom: 1
+              zoom: 1,
+              clickToGo: true,
+              linksControl: true,
+              disableDefaultUI: false
             }
           );
         </script>

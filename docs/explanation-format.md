@@ -74,7 +74,6 @@
 	56. 仮想現在地に応じて表示地点を更新できるようにする
 	57. Explore mode の背景をGoogle Mapに置き換える
 	58. Explore mode で地図上の地点を選択できるようにする
-	59. 選択した地点の緯度軽度をselectedLandingPoint に保存する
 	60. Walk mode 開始時に選択地点をvirtualTrip.currentPointに反映する
 	61.  Home(map)2で選んだ地点からStreet Viewを開始できるようにする
 	62.  Home(map)1 を訪問履歴確認用のGoogle Mapに置き換える

@@ -94,6 +94,12 @@ export default function HomeScreen() {
     setTotalMovement(null);
   }
 
+  const TEST_LANDING_POINT: TripPoint = {
+    name: "渋谷スクランブル交差点",
+    latitude: 35.659494,
+    longitude: 139.700545,
+  };
+
   function handleSelectLandingPoint(event: GestureResponderEvent) {
     if (!isExploreMode) {
       return;
@@ -104,17 +110,17 @@ export default function HomeScreen() {
     setSelectedLandingPoint({
       screenX: locationX,
       screenY: locationY,
-      latitude: null,
-      longitude: null,
-      name: "選択地点",
+      latitude: TEST_LANDING_POINT.latitude,
+      longitude: TEST_LANDING_POINT.longitude,
+      name: TEST_LANDING_POINT.name,
     });
 
     console.log("selectedLandingPoint", {
       screenX: locationX,
       screenY: locationY,
-      latitude: null,
-      longitude: null,
-      name: "選択地点",
+      latitude: TEST_LANDING_POINT.latitude,
+      longitude: TEST_LANDING_POINT.longitude,
+      name: TEST_LANDING_POINT.name,
     });
   }
 
@@ -208,7 +214,10 @@ export default function HomeScreen() {
       {isWalkMode ? (
         //Walk Modeの時はstreet viewを表示
         <View style={styles.mapArea}>
-          <StreetViewPanel latitude={35.659494} longitude={139.700545} />
+          <StreetViewPanel
+            latitude={virtualTrip.currentPoint.latitude}
+            longitude={virtualTrip.currentPoint.longitude}
+          />
         </View>
       ) : (
         //walk mode以外は既存の地図画像を表示

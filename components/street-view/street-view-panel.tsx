@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { WebView } from "react-native-webview";
 
@@ -9,10 +10,18 @@ type StreetViewPanelProps = {
   longitude: number;
 };
 
-export function StreetViewPanel({
-  latitude,
-  longitude,
-}: StreetViewPanelProps) {
+export function StreetViewPanel({ latitude, longitude }: StreetViewPanelProps) {
+  const WebViewRef = useRef<WebView>(null);
+
+  useEffect(() => {
+    WebViewRef.current?.injectJavaScript(`
+       if (window.updateStreetViewPosition) {
+        window.updateStreetViewPosition(${latitude}, ${longitude});
+      }
+      true;
+    `);
+  }, [latitude, longitude]);
+
   if (!GOOGLE_MAPS_API_KEY) {
     return (
       <View style={styles.fallback}>
@@ -36,10 +45,13 @@ export function StreetViewPanel({
         </style>
         <script src="https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}"></script>
       </head>
-      <body>
-        <div id="street-view"></div>
-        <script>
-          const panorama = new google.maps.StreetViewPanorama(
+     <body>
+      <div id="street-view"></div>
+      <script>
+        let panorama;
+
+        function initStreetView() {
+          panorama = new google.maps.StreetViewPanorama(
             document.getElementById("street-view"),
             {
               position: { lat: ${latitude}, lng: ${longitude} },
@@ -50,13 +62,25 @@ export function StreetViewPanel({
               disableDefaultUI: false
             }
           );
-        </script>
-      </body>
+        }
+
+        window.updateStreetViewPosition = function(lat, lng) {
+          if (!panorama) {
+            return;
+          }
+
+          panorama.setPosition({ lat: lat, lng: lng });
+        };
+
+        initStreetView();
+      </script>
+    </body>
     </html>
   `;
 
   return (
     <WebView
+      ref={WebViewRef}
       originWhitelist={["*"]}
       source={{ html }}
       style={styles.webView}

@@ -46,6 +46,11 @@ type TripPoint = {
   longitude: number;
 };
 
+type VisitedRoutePoint = {
+  latitude: number;
+  longitude: number;
+};
+
 type VirtualTripState = {
   startPoint: TripPoint | null;
   currentPoint: TripPoint;
@@ -108,6 +113,22 @@ export default function HomeScreen() {
     latitude: 36.2048,
     longitude: 138.2529,
   };
+
+  // API連携前の仮ルート。VisitedMapPanel で通った道筋を線で表示する
+  const TEST_VISITED_ROUTE: VisitedRoutePoint[] = [
+    {
+      latitude: 35.659494,
+      longitude: 139.700545,
+    },
+    {
+      latitude: 35.670168,
+      longitude: 139.702687,
+    },
+    {
+      latitude: 35.681236,
+      longitude: 139.767125,
+    },
+  ];
 
   // 両モードで共通に使う初期ズーム
   const DEFAULT_MAP_ZOOM = 5;
@@ -254,6 +275,7 @@ export default function HomeScreen() {
               latitude={homeMapCenter.latitude}
               longitude={homeMapCenter.longitude}
               zoom={mapZoom}
+              visitedRoute={TEST_VISITED_ROUTE}
               onCenterChanged={({ latitude, longitude, zoom }) => {
                 setMapCenter((current) => ({
                   ...current,

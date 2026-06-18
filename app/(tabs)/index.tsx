@@ -22,6 +22,7 @@ import { DashboardPassport } from "@/components/dashboard/dashboard-passport";
 import { ThemedText } from "@/components/themed-text";
 import { StreetViewPanel } from "@/components/street-view/street-view-panel";
 import { ExploreMapPanel } from "@/components/explore-map/explore-map-panel";
+import { VisitedMapPanel } from "@/components/visited-map/visited-map-panel";
 
 type LandingPoint = {
   screenX: number;
@@ -102,11 +103,23 @@ export default function HomeScreen() {
     setTotalMovement(null);
   }
 
-  const TEST_LANDING_POINT: TripPoint = {
+  const DEFAULT_EXPLORE_MAP_CENTER: TripPoint = {
     name: "渋谷スクランブル交差点",
     latitude: 35.659494,
     longitude: 139.700545,
   };
+
+  const DEFAULT_HOME_MAP_CENTER: TripPoint = {
+    name: "渋谷スクランブル交差点",
+    latitude: 35.659494,
+    longitude: 139.700545,
+  };
+
+  const homeMapCenter =
+    virtualTrip.currentPoint.latitude === 0 &&
+    virtualTrip.currentPoint.longitude === 0
+      ? DEFAULT_HOME_MAP_CENTER
+      : virtualTrip.currentPoint;
 
   function handleSelectLandingPoint(point: LandingPointSelection) {
     if (!isExploreMode) {
@@ -120,8 +133,6 @@ export default function HomeScreen() {
       longitude: point.longitude,
       name: point.name,
     });
-
-  console.log("selectedLandingPoint", point);
 
     console.log("selectedLandingPoint", point);
   }
@@ -214,7 +225,6 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {isWalkMode ? (
-        //Walk Modeの時はstreet viewを表示
         <View style={styles.mapArea}>
           <StreetViewPanel
             latitude={virtualTrip.currentPoint.latitude}
@@ -225,20 +235,15 @@ export default function HomeScreen() {
         <View style={styles.mapArea}>
           {isExploreMode ? (
             <ExploreMapPanel
-              latitude={TEST_LANDING_POINT.latitude}
-              longitude={TEST_LANDING_POINT.longitude}
+              latitude={DEFAULT_EXPLORE_MAP_CENTER.latitude}
+              longitude={DEFAULT_EXPLORE_MAP_CENTER.longitude}
               onSelectPoint={handleSelectLandingPoint}
             />
           ) : (
-            <ImageBackground
-              source={require("@/assets/images/home/map1/map-background.png")}
-              style={styles.mapBackground}
-              resizeMode="cover"
+            <VisitedMapPanel
+              latitude={homeMapCenter.latitude}
+              longitude={homeMapCenter.longitude}
             />
-          )}
-
-          {isExploreMode ? null : (
-            <Pressable style={styles.mapSelectLayer} onPress={() => {}} />
           )}
 
           <View style={styles.topBar} />
@@ -278,18 +283,6 @@ export default function HomeScreen() {
           ) : null}
           {isExploreMode && hasSelectedLandingPoint && selectedLandingPoint ? (
             <>
-              <View
-                style={[
-                  styles.landingPin,
-                  {
-                    left: selectedLandingPoint.screenX - 12,
-                    top: selectedLandingPoint.screenY - 24,
-                  },
-                ]}
-              >
-                <ThemedText style={styles.landingPinText}>📍</ThemedText>
-              </View>
-
               <View style={styles.landingConfirm}>
                 <ThemedText style={styles.landingConfirmText}>
                   この地点に降り立ちますか？
@@ -407,9 +400,6 @@ const styles = StyleSheet.create({
     flex: 1,
     position: "relative",
     overflow: "hidden",
-  },
-  mapBackground: {
-    flex: 1,
   },
   mapSelectLayer: {
     ...StyleSheet.absoluteFillObject,

@@ -103,22 +103,23 @@ export default function HomeScreen() {
     setTotalMovement(null);
   }
 
-  const DEFAULT_EXPLORE_MAP_CENTER: TripPoint = {
-    name: "渋谷スクランブル交差点",
-    latitude: 35.659494,
-    longitude: 139.700545,
+  const DEFAULT_MAP_CENTER: TripPoint = {
+    name: "日本付近",
+    latitude: 36.2048,
+    longitude: 138.2529,
   };
 
-  const DEFAULT_HOME_MAP_CENTER: TripPoint = {
-    name: "渋谷スクランブル交差点",
-    latitude: 35.659494,
-    longitude: 139.700545,
-  };
+  // 両モードで共通に使う初期ズーム
+  const DEFAULT_MAP_ZOOM = 5;
 
+  // 最後に見ていた地図の中心を共通で保持する
+  const [mapCenter, setMapCenter] = useState<TripPoint>(DEFAULT_MAP_CENTER);
+  // 最後に見ていたズーム倍率も共通で保持する
+  const [mapZoom, setMapZoom] = useState(DEFAULT_MAP_ZOOM);
   const homeMapCenter =
     virtualTrip.currentPoint.latitude === 0 &&
     virtualTrip.currentPoint.longitude === 0
-      ? DEFAULT_HOME_MAP_CENTER
+      ? mapCenter
       : virtualTrip.currentPoint;
 
   function handleSelectLandingPoint(point: LandingPointSelection) {
@@ -235,14 +236,32 @@ export default function HomeScreen() {
         <View style={styles.mapArea}>
           {isExploreMode ? (
             <ExploreMapPanel
-              latitude={DEFAULT_EXPLORE_MAP_CENTER.latitude}
-              longitude={DEFAULT_EXPLORE_MAP_CENTER.longitude}
+              latitude={mapCenter.latitude}
+              longitude={mapCenter.longitude}
+              zoom={mapZoom}
               onSelectPoint={handleSelectLandingPoint}
+              onCenterChanged={({ latitude, longitude, zoom }) => {
+                setMapCenter((current) => ({
+                  ...current,
+                  latitude,
+                  longitude,
+                }));
+                setMapZoom(zoom);
+              }}
             />
           ) : (
             <VisitedMapPanel
               latitude={homeMapCenter.latitude}
               longitude={homeMapCenter.longitude}
+              zoom={mapZoom}
+              onCenterChanged={({ latitude, longitude, zoom }) => {
+                setMapCenter((current) => ({
+                  ...current,
+                  latitude,
+                  longitude,
+                }));
+                setMapZoom(zoom);
+              }}
             />
           )}
 

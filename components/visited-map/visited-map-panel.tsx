@@ -7,11 +7,19 @@ import { ThemedText } from "@/components/themed-text";
 type VisitedMapPanelProps = {
   latitude: number;
   longitude: number;
+  zoom: number;
+  onCenterChanged: (center: {
+    latitude: number;
+    longitude: number;
+    zoom: number;
+  }) => void;
 };
 
 export function VisitedMapPanel({
   latitude,
   longitude,
+  zoom,
+  onCenterChanged,
 }: VisitedMapPanelProps) {
   if (!GOOGLE_MAPS_API_KEY) {
     return (
@@ -39,12 +47,30 @@ export function VisitedMapPanel({
       <body>
         <div id="map"></div>
         <script>
-          new google.maps.Map(document.getElementById("map"), {
+          const map = new google.maps.Map(document.getElementById("map"), {
             center: { lat: ${latitude}, lng: ${longitude} },
-            zoom: 14,
+            zoom: ${zoom},
             disableDefaultUI: true,
             clickableIcons: false,
             gestureHandling: "greedy",
+          });
+
+          // 通常時の地図を動かした結果も親へ返して、
+          // Explore mode と同じ場所・同じ縮尺を共有する
+          map.addListener("idle", () => {
+            const center = map.getCenter();
+
+            if (!center) {
+              return;
+            }
+
+            window.ReactNativeWebView.postMessage(
+              JSON.stringify({
+                latitude: center.lat(),
+                longitude: center.lng(),
+                zoom: map.getZoom(),
+              })
+            );
           });
         </script>
       </body>
@@ -56,6 +82,14 @@ export function VisitedMapPanel({
       originWhitelist={["*"]}
       source={{ html }}
       style={styles.webView}
+      onMessage={(event) => {
+        const data = JSON.parse(event.nativeEvent.data);
+        onCenterChanged({
+          latitude: data.latitude,
+          longitude: data.longitude,
+          zoom: data.zoom,
+        });
+      }}
     />
   );
 }

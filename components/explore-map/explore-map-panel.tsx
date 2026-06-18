@@ -7,6 +7,7 @@ import { ThemedText } from "@/components/themed-text";
 type ExploreMapPanelProps = {
   latitude: number;
   longitude: number;
+  zoom: number;
   onSelectPoint: (point: {
     screenX: number;
     screenY: number;
@@ -14,12 +15,19 @@ type ExploreMapPanelProps = {
     longitude: number;
     name: string;
   }) => void;
+  onCenterChanged: (center: {
+    latitude: number;
+    longitude: number;
+    zoom: number;
+  }) => void;
 };
 
 export function ExploreMapPanel({
   latitude,
   longitude,
+  zoom,
   onSelectPoint,
+  onCenterChanged,
 }: ExploreMapPanelProps) {
   if (!GOOGLE_MAPS_API_KEY) {
     return (
@@ -49,10 +57,29 @@ export function ExploreMapPanel({
       <script>
         const map = new google.maps.Map(document.getElementById("map"), {
           center: { lat: ${latitude}, lng: ${longitude} },
-          zoom: 16,
+          zoom: ${zoom},
           disableDefaultUI: true,
           clickableIcons: false,
           gestureHandling: "greedy",
+        });
+
+        // 地図を動かし終わったタイミングで、
+        // 今見ている中心とズームを親へ返す
+        map.addListener("idle", () => {
+          const center = map.getCenter();
+
+          if (!center) {
+            return;
+          }
+
+          window.ReactNativeWebView.postMessage(
+            JSON.stringify({
+              type: "centerChanged",
+              latitude: center.lat(),
+              longitude: center.lng(),
+              zoom: map.getZoom(),
+            })
+          );
         });
 
         let marker = null;
@@ -92,6 +119,16 @@ export function ExploreMapPanel({
       style={styles.webView}
       onMessage={(event) => {
         const data = JSON.parse(event.nativeEvent.data);
+
+        if (data.type === "centerChanged") {
+          onCenterChanged({
+            latitude: data.latitude,
+            longitude: data.longitude,
+            zoom: data.zoom,
+          });
+          return;
+        }
+
         onSelectPoint(data);
       }}
     />

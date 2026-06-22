@@ -8,9 +8,21 @@ import { ThemedText } from "@/components/themed-text";
 type StreetViewPanelProps = {
   latitude: number;
   longitude: number;
+  onStatusChange?: (status: StreetViewStatus) => void;
 };
 
-export function StreetViewPanel({ latitude, longitude }: StreetViewPanelProps) {
+type StreetViewStatus =
+  | "loading"
+  | "ready"
+  | "not_found"
+  | "script_error"
+  | "unknown_error";
+
+export function StreetViewPanel({
+  latitude,
+  longitude,
+  onStatusChange,
+}: StreetViewPanelProps) {
   const WebViewRef = useRef<WebView>(null);
 
   useEffect(() => {
@@ -45,32 +57,98 @@ export function StreetViewPanel({ latitude, longitude }: StreetViewPanelProps) {
         </style>
         <script src="https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}"></script>
       </head>
-     <body>
-      <div id="street-view"></div>
-      <script>
-        let panorama;
+      <body>
+        <div id="street-view"></div>
+        <script>
+          let panorama;
 
-        function initStreetView() {
-          panorama = new google.maps.StreetViewPanorama(
-            document.getElementById("street-view"),
-            {
-              position: { lat: ${latitude}, lng: ${longitude} },
-              pov: { heading: 0, pitch: 0 },
-              zoom: 1,
-              clickToGo: true,
-              linksControl: true,
-              disableDefaultUI: false
-            }
-          );
-        }
-
-        window.updateStreetViewPosition = function(lat, lng) {
-          if (!panorama) {
-            return;
+          // WebView内の状態をReact Native側へ送る
+          function notifyStatus(status, detail) {
+            window.ReactNativeWebView.postMessage(
+              JSON.stringify({
+                type: "streetViewStatus",
+                status: status,
+                detail: detail || null
+              })
+            );
           }
 
-          panorama.setPosition({ lat: lat, lng: lng });
-        };
+          function initStreetView() {
+            notifyStatus("loading");
+            showNearestStreetView(${latitude}, ${longitude});
+          }
+
+          function createOrMovePanorama(position) {
+            if (!panorama) {
+              panorama = new google.maps.StreetViewPanorama(
+                document.getElementById("street-view"),
+                {
+                  position: position,
+                  pov: { heading: 0, pitch: 0 },
+                  zoom: 1,
+                  clickToGo: true,
+                  linksControl: true,
+                  disableDefaultUI: false
+                }
+              );
+              return;
+            }
+
+            panorama.setPosition(position);
+          }
+
+          function findPanoramaByRadius(service, requestedPosition, radiuses, index) {
+            if (index >= radiuses.length) {
+              notifyStatus(
+                "not_found",
+                "Street View data was not found near this point."
+              );
+              return;
+            }
+
+            const radius = radiuses[index];
+
+            service.getPanorama(
+              {
+                location: requestedPosition,
+                radius: radius,
+                source: google.maps.StreetViewSource.OUTDOOR
+              },
+              function(data, status) {
+                if (status === google.maps.StreetViewStatus.OK && data.location) {
+                  // 選択座標そのものではなく、実際に見つかったパノラマ位置へ移動する
+                  createOrMovePanorama(data.location.latLng);
+                  notifyStatus("ready", "radius:" + radius);
+                  return;
+                }
+
+                findPanoramaByRadius(service, requestedPosition, radiuses, index + 1);
+              }
+            );
+          }
+
+          function showNearestStreetView(lat, lng) {
+            notifyStatus("loading");
+
+            try {
+              const streetViewService = new google.maps.StreetViewService();
+              const requestedPosition = { lat: lat, lng: lng };
+
+              // 近い範囲から順に探して、見つからなければ探索半径を広げる
+              findPanoramaByRadius(
+                streetViewService,
+                requestedPosition,
+                [50, 100, 500],
+                0
+              );
+            } catch (error) {
+              notifyStatus("script_error", String(error));
+            }
+          }
+
+          window.updateStreetViewPosition = function(lat, lng) {
+            showNearestStreetView(lat, lng);
+          };
 
         initStreetView();
       </script>
@@ -84,6 +162,13 @@ export function StreetViewPanel({ latitude, longitude }: StreetViewPanelProps) {
       originWhitelist={["*"]}
       source={{ html }}
       style={styles.webView}
+      onMessage={(event) => {
+        const data = JSON.parse(event.nativeEvent.data);
+
+        if (data.type === "streetViewStatus") {
+          onStatusChange?.(data.status);
+        }
+      }}
     />
   );
 }

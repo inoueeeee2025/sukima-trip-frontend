@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Image,
-  ImageBackground,
   Pressable,
   SafeAreaView,
   StyleSheet,
@@ -20,6 +20,7 @@ import { getAccessToken } from "@/components/auth/auth-storage";
 import { useAuth } from "@/components/auth/use-auth";
 import { DashboardPassport } from "@/components/dashboard/dashboard-passport";
 import { ThemedText } from "@/components/themed-text";
+import { StreetViewAvailabilityChecker } from "@/components/street-view/street-view-availability-checker";
 import { StreetViewPanel } from "@/components/street-view/street-view-panel";
 import { ExploreMapPanel } from "@/components/explore-map/explore-map-panel";
 import { VisitedMapPanel } from "@/components/visited-map/visited-map-panel";
@@ -58,6 +59,14 @@ type VirtualTripState = {
   usedVirtualDistanceKm: number;
   remainingDistanceKm: number | null;
 };
+
+type StreetViewStatus =
+  | "loading"
+  | "ready"
+  | "not_found"
+  | "script_error"
+  | "unknown_error";
+
 export default function HomeScreen() {
   const { isLoggedIn, isCheckingAuth, logoutUser } = useAuth();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
@@ -69,9 +78,20 @@ export default function HomeScreen() {
   const [isMovementLoading, setIsMovementLoading] = useState(true);
   const [isExploreMode, setIsExploreMode] = useState(false);
   const [isWalkMode, setIsWalkMode] = useState(false);
+  // Street Viewが表示できない原因をログで追うための状態
+  const [streetViewStatus, setStreetViewStatus] =
+    useState<StreetViewStatus | null>(null);
+  // Street Viewが見つからなかった時の文言を、Home(map)2上に出すために保持する
+  const [streetViewUnavailableMessage, setStreetViewUnavailableMessage] =
+    useState<string | null>(null);
+  // not_found文言を3秒後に薄く消すための透明度
+  const streetViewUnavailableOpacity = useRef(new Animated.Value(0)).current;
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [selectedLandingPoint, setSelectedLandingPoint] =
     useState<LandingPoint | null>(null);
+  // Walk modeへ切り替える前に、裏側でStreet Viewがあるか確認する地点
+  const [pendingStreetViewPoint, setPendingStreetViewPoint] =
+    useState<TripPoint | null>(null);
   const [virtualTrip, setVirtualTrip] = useState<VirtualTripState>({
     startPoint: null,
     currentPoint: {
@@ -92,6 +112,7 @@ export default function HomeScreen() {
     setIsExploreMode(false);
     setIsWalkMode(false);
     setSelectedLandingPoint(null);
+    setPendingStreetViewPoint(null);
     setVirtualTrip({
       startPoint: null,
       currentPoint: {
@@ -155,6 +176,8 @@ export default function HomeScreen() {
       longitude: point.longitude,
       name: point.name,
     });
+    // 新しい地点を選び直したら、前回の「Street Viewなし」案内は消す
+    setStreetViewUnavailableMessage(null);
 
     console.log("selectedLandingPoint", point);
   }
@@ -173,16 +196,12 @@ export default function HomeScreen() {
       longitude: selectedLandingPoint.longitude ?? 0,
     };
 
-    //virtualTripのstartPoint / currentPointを更新
-    setVirtualTrip((current) => ({
-      ...current,
-      startPoint,
-      currentPoint: startPoint,
-    }));
-
-    //walk modeに切り替え、explore modeを終了
-    setIsWalkMode(true);
-    setIsExploreMode(false);
+    // まだWalk modeへは切り替えず、まず裏側でStreet Viewがあるか確認する
+    setStreetViewStatus("loading");
+    setStreetViewUnavailableMessage(null);
+    // 「はい」を押した時点で確認モーダルを消す
+    setSelectedLandingPoint(null);
+    setPendingStreetViewPoint(startPoint);
   }
 
   function handleCancelLandingPoint() {
@@ -229,6 +248,30 @@ export default function HomeScreen() {
     loadHomeData();
   }, []); //ホーム画面が開いた時にプロフィール取得が走る、tokenを読んで/profileを叩く、結果をprofile　stateに入れる
 
+  useEffect(() => {
+    if (!streetViewUnavailableMessage) {
+      return;
+    }
+
+    // 表示直後ははっきり見せて、3秒後にフェードアウトする
+    streetViewUnavailableOpacity.setValue(1);
+
+    const timerId = setTimeout(() => {
+      Animated.timing(streetViewUnavailableOpacity, {
+        toValue: 0,
+        duration: 700,
+        useNativeDriver: true,
+      }).start(() => {
+        setStreetViewUnavailableMessage(null);
+      });
+    }, 3000);
+
+    return () => {
+      clearTimeout(timerId);
+      streetViewUnavailableOpacity.stopAnimation();
+    };
+  }, [streetViewUnavailableMessage, streetViewUnavailableOpacity]);
+
   if (isCheckingAuth) {
     return (
       <SafeAreaView style={styles.container}>
@@ -251,6 +294,11 @@ export default function HomeScreen() {
           <StreetViewPanel
             latitude={virtualTrip.currentPoint.latitude}
             longitude={virtualTrip.currentPoint.longitude}
+            onStatusChange={(status) => {
+              // Street View側から返ってきた表示状態を保存する
+              console.log("streetViewStatus", status);
+              setStreetViewStatus(status);
+            }}
           />
         </View>
       ) : (
@@ -287,6 +335,41 @@ export default function HomeScreen() {
             />
           )}
 
+          {pendingStreetViewPoint ? (
+            <StreetViewAvailabilityChecker
+              point={pendingStreetViewPoint}
+              onResult={(result) => {
+                console.log("streetViewAvailability", result);
+                setStreetViewStatus(result.status);
+
+                if (result.status === "ready") {
+                  // Street Viewが見つかった時だけ、補正後の座標を仮想現在地にしてWalk modeへ進む
+                  const correctedPoint: TripPoint = {
+                    name: pendingStreetViewPoint.name,
+                    latitude: result.latitude,
+                    longitude: result.longitude,
+                  };
+
+                  setVirtualTrip((current) => ({
+                    ...current,
+                    startPoint: correctedPoint,
+                    currentPoint: correctedPoint,
+                  }));
+                  setPendingStreetViewPoint(null);
+                  setIsWalkMode(true);
+                  setIsExploreMode(false);
+                  return;
+                }
+
+                // Street Viewがない時は画面を切り替えず、Home(map)2上に案内を出す
+                setPendingStreetViewPoint(null);
+                setStreetViewUnavailableMessage(
+                  "この地点の近くにStreet Viewがありません"
+                );
+              }}
+            />
+          ) : null}
+
           <View style={styles.topBar} />
           <View style={styles.distanceBadge}>
             <Image
@@ -321,6 +404,18 @@ export default function HomeScreen() {
                 ＜探索モード中＞
               </ThemedText>
             </View>
+          ) : null}
+          {isExploreMode && streetViewUnavailableMessage ? (
+            <Animated.View
+              style={[
+                styles.streetViewUnavailableCard,
+                { opacity: streetViewUnavailableOpacity },
+              ]}
+            >
+              <ThemedText style={styles.streetViewUnavailableTitle}>
+                {streetViewUnavailableMessage}
+              </ThemedText>
+            </Animated.View>
           ) : null}
           {isExploreMode && hasSelectedLandingPoint && selectedLandingPoint ? (
             <>
@@ -441,6 +536,21 @@ const styles = StyleSheet.create({
     flex: 1,
     position: "relative",
     overflow: "hidden",
+  },
+  streetViewUnavailableCard: {
+    position: "absolute",
+    bottom: 164,
+    alignSelf: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 6,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.75)",
+  },
+  streetViewUnavailableTitle: {
+    color: "#333333",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
   },
   mapSelectLayer: {
     ...StyleSheet.absoluteFillObject,

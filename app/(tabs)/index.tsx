@@ -47,6 +47,14 @@ type TripPoint = {
   longitude: number;
 };
 
+type VirtualTripMovementLog = {
+  id: string;
+  fromPoint: TripPoint;
+  toPoint: TripPoint;
+  distanceKm: number;
+  movedAt: string;
+}
+
 type VisitedRoutePoint = {
   latitude: number;
   longitude: number;
@@ -54,10 +62,10 @@ type VisitedRoutePoint = {
 
 type VirtualTripState = {
   startPoint: TripPoint | null;
-  currentPoint: TripPoint;
-  goalPoint: TripPoint | null;
+  currentPoint: TripPoint | null;
+  totalVirtualDistanceKm: number;
   usedVirtualDistanceKm: number;
-  remainingDistanceKm: number | null;
+  movementLog: VirtualTripMovementLog[];
 };
 
 type StreetViewStatus =
@@ -94,17 +102,22 @@ export default function HomeScreen() {
     useState<TripPoint | null>(null);
   const [virtualTrip, setVirtualTrip] = useState<VirtualTripState>({
     startPoint: null,
-    currentPoint: {
-      name: "現在地未設定",
-      latitude: 0,
-      longitude: 0,
-    },
-    goalPoint: null,
+    currentPoint: null,
+    totalVirtualDistanceKm: 0,
     usedVirtualDistanceKm: 0,
-    remainingDistanceKm: null,
+    movementLog: [],
   });
 
   const hasSelectedLandingPoint = selectedLandingPoint !== null;
+
+  const remainingVirtualDistanceKm = Math.max(
+  virtualTrip.totalVirtualDistanceKm -
+    virtualTrip.usedVirtualDistanceKm,
+  0
+);
+
+const hasUsedAllVirtualDistance =
+    isWalkMode && remainingVirtualDistanceKm === 0;
 
   async function handleLogout() {
     await logoutUser();
@@ -115,14 +128,10 @@ export default function HomeScreen() {
     setPendingStreetViewPoint(null);
     setVirtualTrip({
       startPoint: null,
-      currentPoint: {
-        name: "現在地未設定",
-        latitude: 0,
-        longitude: 0,
-      },
-      goalPoint: null,
+      currentPoint: null,
+      totalVirtualDistanceKm: 0,
       usedVirtualDistanceKm: 0,
-      remainingDistanceKm: null,
+      movementLog: [],
     });
     setProfile(null);
     setTodayMovement(null);
@@ -158,11 +167,7 @@ export default function HomeScreen() {
   const [mapCenter, setMapCenter] = useState<TripPoint>(DEFAULT_MAP_CENTER);
   // 最後に見ていたズーム倍率も共通で保持する
   const [mapZoom, setMapZoom] = useState(DEFAULT_MAP_ZOOM);
-  const homeMapCenter =
-    virtualTrip.currentPoint.latitude === 0 &&
-    virtualTrip.currentPoint.longitude === 0
-      ? mapCenter
-      : virtualTrip.currentPoint;
+  const homeMapCenter =virtualTrip.currentPoint ?? mapCenter;
 
   function handleSelectLandingPoint(point: LandingPointSelection) {
     if (!isExploreMode) {
@@ -228,8 +233,12 @@ export default function HomeScreen() {
         console.log("movementResult", movementResult);
         setTodayMovement(movementResult);
 
-        //今後ここで、movementResult.real_distance_kmを
-        //virtualTrip.usedVirtualDistanceKmやremainingDistanceKmに反映する
+        //APIから取得した仮想距離と消費済み距離を仮想旅行のstateへ反映する
+        setVirtualTrip((current) => ({
+          ...current,
+          totalVirtualDistanceKm: movementResult.virtual_distance_km,
+          usedVirtualDistanceKm: movementResult.used_virtual_distance_km,
+        }))
 
         const totalMovementResult = await getTotalMovements(token);
         console.log("totalMovementResult", totalMovementResult);
@@ -289,7 +298,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {isWalkMode ? (
+      {isWalkMode && virtualTrip.currentPoint ? (
         <View style={styles.mapArea}>
           <StreetViewPanel
             latitude={virtualTrip.currentPoint.latitude}
@@ -352,7 +361,7 @@ export default function HomeScreen() {
 
                   setVirtualTrip((current) => ({
                     ...current,
-                    startPoint: correctedPoint,
+                    startPoint: current.startPoint ?? correctedPoint,
                     currentPoint: correctedPoint,
                   }));
                   setPendingStreetViewPoint(null);

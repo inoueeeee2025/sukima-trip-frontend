@@ -1,4 +1,4 @@
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,10 +12,10 @@ import {
   View,
 } from "react-native";
 
-import { deleteFavorite, Favorite, getFavorites } from "@/api/favorites";
+import { deleteFavorite, Favorite, getFavorites, saveFavorite } from "@/api/favorites";
 import { getAccessToken } from "@/components/auth/auth-storage";
 
-const CARD_GAP = 10;
+const CARD_GAP = 12;
 const SCREEN_PADDING = 16;
 const CARD_WIDTH =
   (Dimensions.get("window").width - SCREEN_PADDING * 2 - CARD_GAP) / 2;
@@ -49,12 +49,12 @@ export default function FavoriteSpotsScreen() {
     }
   }
 
-  async function handleDelete(id: string) {
+  async function handleToggleLike(item: Favorite) {
     try {
       const token = await getAccessToken();
       if (!token) return;
-      await deleteFavorite(id, token);
-      setFavorites((prev) => prev.filter((f) => f.id !== id));
+      await deleteFavorite(item.id, token);
+      setFavorites((prev) => prev.filter((f) => f.id !== item.id));
     } catch {
       // keep current state on error
     }
@@ -63,16 +63,19 @@ export default function FavoriteSpotsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* ヘッダー */}
-      <View style={styles.headerWrap}>
-        <Image
-          source={require("@/assets/images/spots/spot-title-banner.png")}
-          style={styles.headerBanner}
-        />
-        <Text style={styles.headerText}>お気に入りスポット</Text>
-        <Image
-          source={require("@/assets/images/home/map1/explore-character.png")}
-          style={styles.headerCharacter}
-        />
+      <View style={styles.headerRow}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.push("/(tabs)")}
+        >
+          <Text style={styles.backArrow}>‹</Text>
+        </TouchableOpacity>
+        <View style={styles.headerBannerWrap}>
+          <Image
+            source={require("@/assets/images/spots/spots-header-banner.png")}
+            style={styles.headerBanner}
+          />
+        </View>
       </View>
 
       {/* コンテンツ */}
@@ -101,17 +104,28 @@ export default function FavoriteSpotsScreen() {
               </Text>
             </View>
           }
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <View style={styles.card}>
-              {/* 写真プレースホルダー */}
-              <View style={styles.photoPlaceholder} />
+              {/* 写真エリア */}
+              <View style={styles.photoArea}>
+                <View style={styles.photoPlaceholder} />
+                {/* 番号バッジ */}
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{index + 1}</Text>
+                </View>
+                {/* ハートボタン */}
+                <TouchableOpacity
+                  style={styles.heartButton}
+                  onPress={() => handleToggleLike(item)}
+                >
+                  <Text style={styles.heartIcon}>♥</Text>
+                </TouchableOpacity>
+              </View>
+              {/* スポット名 */}
               <View style={styles.cardFooter}>
                 <Text style={styles.spotName} numberOfLines={2}>
                   {item.place_name}
                 </Text>
-                <TouchableOpacity onPress={() => handleDelete(item.id)}>
-                  <Text style={styles.deleteText}>✕</Text>
-                </TouchableOpacity>
               </View>
             </View>
           )}
@@ -126,33 +140,35 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#60d0e5",
   },
-  headerWrap: {
-    marginHorizontal: SCREEN_PADDING,
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 16,
-    marginBottom: 12,
-    height: 52,
+    marginBottom: 16,
+    paddingHorizontal: SCREEN_PADDING,
+    gap: 8,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.4)",
+    alignItems: "center",
     justifyContent: "center",
   },
-  headerBanner: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    height: 52,
-    width: "100%",
-    resizeMode: "stretch",
-  },
-  headerText: {
+  backArrow: {
+    fontSize: 24,
     color: "#ffffff",
-    fontSize: 18,
     fontWeight: "700",
-    marginLeft: 16,
+    lineHeight: 28,
   },
-  headerCharacter: {
-    position: "absolute",
-    right: -8,
-    bottom: 0,
-    width: 52,
-    height: 60,
+  headerBannerWrap: {
+    flex: 1,
+    height: 48,
+  },
+  headerBanner: {
+    width: "100%",
+    height: 48,
     resizeMode: "contain",
   },
   list: {
@@ -165,31 +181,61 @@ const styles = StyleSheet.create({
   },
   card: {
     width: CARD_WIDTH,
-    backgroundColor: "#ffffff",
     borderRadius: 8,
     overflow: "hidden",
+    borderWidth: 3,
+    borderColor: "#c8a800",
+    backgroundColor: "#ffffff",
+  },
+  photoArea: {
+    width: "100%",
+    height: CARD_WIDTH * 0.8,
+    position: "relative",
   },
   photoPlaceholder: {
     width: "100%",
-    height: CARD_WIDTH * 0.75,
+    height: "100%",
     backgroundColor: "#b0e0ec",
   },
-  cardFooter: {
-    flexDirection: "row",
+  badge: {
+    position: "absolute",
+    top: 6,
+    left: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#c8a800",
     alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  heartButton: {
+    position: "absolute",
+    bottom: 6,
+    right: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heartIcon: {
+    fontSize: 14,
+    color: "#e74c3c",
+  },
+  cardFooter: {
     paddingHorizontal: 8,
     paddingVertical: 6,
-    gap: 4,
   },
   spotName: {
-    flex: 1,
     fontSize: 12,
     fontWeight: "600",
     color: "#1a1a1a",
-  },
-  deleteText: {
-    fontSize: 12,
-    color: "#aaa",
   },
   center: {
     flex: 1,

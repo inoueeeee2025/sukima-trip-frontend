@@ -11,8 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "探索中の移動距離計測とスポット発見のために現在地を使用します。",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "探索中の移動距離計測とスポット発見のために現在地を使用します。"
+        "NSLocationWhenInUseUsageDescription": "探索中の移動距離計測とスポット発見のために現在地を使用します。"
       }
     },
     "android": {

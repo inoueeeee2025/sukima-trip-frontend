@@ -606,16 +606,16 @@ const styles = StyleSheet.create({
   },
   favoriteButton: {
     position: "absolute",
-    top: 62,
+    top: 56,
     left: 8,
-    width: 160,
-    height: 40,
+    width: 60,
+    height: 60,
     alignItems: "center",
     justifyContent: "center",
   },
   favoriteButtonImage: {
-    width: 160,
-    height: 40,
+    width: 60,
+    height: 60,
     resizeMode: "contain",
   },
   coinArea: {

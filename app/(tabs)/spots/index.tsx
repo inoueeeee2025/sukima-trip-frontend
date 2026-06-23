@@ -2,7 +2,9 @@ import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
+  Image,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -12,6 +14,11 @@ import {
 
 import { deleteFavorite, Favorite, getFavorites } from "@/api/favorites";
 import { getAccessToken } from "@/components/auth/auth-storage";
+
+const CARD_GAP = 10;
+const SCREEN_PADDING = 16;
+const CARD_WIDTH =
+  (Dimensions.get("window").width - SCREEN_PADDING * 2 - CARD_GAP) / 2;
 
 export default function FavoriteSpotsScreen() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
@@ -49,53 +56,67 @@ export default function FavoriteSpotsScreen() {
       await deleteFavorite(id, token);
       setFavorites((prev) => prev.filter((f) => f.id !== id));
     } catch {
-      // no-op
+      // keep current state on error
     }
-  }
-
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" color="#1f6f5f" />
-      </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView style={styles.center}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={load}>
-          <Text style={styles.retryText}>再試行</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>お気に入りスポット</Text>
+      {/* ヘッダー */}
+      <View style={styles.headerWrap}>
+        <Image
+          source={require("@/assets/images/spots/spot-title-banner.png")}
+          style={styles.headerBanner}
+        />
+        <Text style={styles.headerText}>お気に入りスポット</Text>
+        <Image
+          source={require("@/assets/images/home/map1/explore-character.png")}
+          style={styles.headerCharacter}
+        />
       </View>
-      <FlatList
-        data={favorites}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>お気に入りスポットはまだありません</Text>
-        }
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.spotName}>{item.place_name}</Text>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => handleDelete(item.id)}
-            >
-              <Text style={styles.deleteText}>削除</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      />
+
+      {/* コンテンツ */}
+      {isLoading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#ffffff" />
+        </View>
+      ) : error ? (
+        <View style={styles.center}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={load}>
+            <Text style={styles.retryText}>再試行</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={favorites}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <View style={styles.center}>
+              <Text style={styles.emptyText}>
+                お気に入りスポットはまだありません
+              </Text>
+            </View>
+          }
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              {/* 写真プレースホルダー */}
+              <View style={styles.photoPlaceholder} />
+              <View style={styles.cardFooter}>
+                <Text style={styles.spotName} numberOfLines={2}>
+                  {item.place_name}
+                </Text>
+                <TouchableOpacity onPress={() => handleDelete(item.id)}>
+                  <Text style={styles.deleteText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -103,70 +124,92 @@ export default function FavoriteSpotsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f7f4ed",
+    backgroundColor: "#60d0e5",
+  },
+  headerWrap: {
+    marginHorizontal: SCREEN_PADDING,
+    marginTop: 16,
+    marginBottom: 12,
+    height: 52,
+    justifyContent: "center",
+  },
+  headerBanner: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 52,
+    width: "100%",
+    resizeMode: "stretch",
+  },
+  headerText: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "700",
+    marginLeft: 16,
+  },
+  headerCharacter: {
+    position: "absolute",
+    right: -8,
+    bottom: 0,
+    width: 52,
+    height: 60,
+    resizeMode: "contain",
+  },
+  list: {
+    paddingHorizontal: SCREEN_PADDING,
+    paddingBottom: 32,
+    gap: CARD_GAP,
+  },
+  row: {
+    gap: CARD_GAP,
+  },
+  card: {
+    width: CARD_WIDTH,
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  photoPlaceholder: {
+    width: "100%",
+    height: CARD_WIDTH * 0.75,
+    backgroundColor: "#b0e0ec",
+  },
+  cardFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    gap: 4,
+  },
+  spotName: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#1a1a1a",
+  },
+  deleteText: {
+    fontSize: 12,
+    color: "#aaa",
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f7f4ed",
     gap: 16,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#1a1a1a",
-  },
-  list: {
-    paddingHorizontal: 24,
-    gap: 12,
-    paddingBottom: 32,
-  },
-  card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#d5cec3",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  spotName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1a1a1a",
-    flex: 1,
-  },
-  deleteButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#d5cec3",
-  },
-  deleteText: {
-    fontSize: 12,
-    color: "#888",
+    paddingTop: 60,
   },
   emptyText: {
-    textAlign: "center",
-    color: "#888",
+    color: "#ffffff",
     fontSize: 14,
-    marginTop: 32,
+    fontWeight: "600",
   },
   errorText: {
-    color: "#c0392b",
+    color: "#ffffff",
     fontSize: 14,
     textAlign: "center",
   },
   retryButton: {
-    backgroundColor: "#1f6f5f",
+    backgroundColor: "rgba(0,0,0,0.2)",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,

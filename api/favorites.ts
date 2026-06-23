@@ -4,13 +4,17 @@ export type Favorite = {
   id: string;
   user_id: string;
   place_id: string;
-  place_name: string;
+  name: string;
+  latitude: number;
+  longitude: number;
   created_at: string;
 };
 
 export type SaveFavoriteRequest = {
   place_id: string;
   place_name: string;
+  latitude: number;
+  longitude: number;
 };
 
 export function getFavorites(accessToken: string) {

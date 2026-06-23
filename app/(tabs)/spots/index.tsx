@@ -124,7 +124,7 @@ export default function FavoriteSpotsScreen() {
               {/* スポット名 */}
               <View style={styles.cardFooter}>
                 <Text style={styles.spotName} numberOfLines={2}>
-                  {item.place_name}
+                  {item.name}
                 </Text>
               </View>
             </View>

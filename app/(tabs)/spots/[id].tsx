@@ -13,7 +13,7 @@ import { likeSpot, unlikeSpot } from "@/api/spots";
 import { getAccessToken } from "@/components/auth/auth-storage";
 
 export default function SpotDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
   const [liked, setLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
 
@@ -27,7 +27,7 @@ export default function SpotDetailScreen() {
         await unlikeSpot(id, token);
         setLiked(false);
       } else {
-        await likeSpot(id, id, token);
+        await likeSpot(id, name ?? id, token);
         setLiked(true);
       }
     } catch {

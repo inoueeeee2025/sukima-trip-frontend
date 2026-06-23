@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 
-import { deleteFavorite, Favorite, getFavorites, saveFavorite } from "@/api/favorites";
+import { deleteFavorite, Favorite, getFavorites } from "@/api/favorites";
 import { getAccessToken } from "@/components/auth/auth-storage";
 
 const CARD_GAP = 12;
@@ -24,6 +24,7 @@ export default function FavoriteSpotsScreen() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -50,13 +51,14 @@ export default function FavoriteSpotsScreen() {
   }
 
   async function handleToggleLike(item: Favorite) {
+    setDeleteError(null);
     try {
       const token = await getAccessToken();
       if (!token) return;
       await deleteFavorite(item.id, token);
       setFavorites((prev) => prev.filter((f) => f.id !== item.id));
     } catch {
-      // keep current state on error
+      setDeleteError("削除に失敗しました");
     }
   }
 
@@ -77,6 +79,11 @@ export default function FavoriteSpotsScreen() {
           />
         </View>
       </View>
+
+      {/* 削除エラー */}
+      {deleteError ? (
+        <Text style={styles.deleteErrorText}>{deleteError}</Text>
+      ) : null}
 
       {/* コンテンツ */}
       {isLoading ? (
@@ -105,7 +112,15 @@ export default function FavoriteSpotsScreen() {
             </View>
           }
           renderItem={({ item, index }) => (
-            <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() =>
+                router.push({
+                  pathname: "/(tabs)/spots/[id]",
+                  params: { id: item.place_id, name: item.name },
+                })
+              }
+            >
               {/* 写真エリア */}
               <View style={styles.photoArea}>
                 <View style={styles.photoPlaceholder} />
@@ -127,7 +142,7 @@ export default function FavoriteSpotsScreen() {
                   {item.name}
                 </Text>
               </View>
-            </View>
+            </TouchableOpacity>
           )}
         />
       )}
@@ -248,6 +263,13 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 14,
     fontWeight: "600",
+  },
+  deleteErrorText: {
+    color: "#fff",
+    backgroundColor: "rgba(200,0,0,0.5)",
+    textAlign: "center",
+    paddingVertical: 6,
+    fontSize: 13,
   },
   errorText: {
     color: "#ffffff",

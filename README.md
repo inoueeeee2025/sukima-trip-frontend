@@ -37,7 +37,15 @@ cd sukima-trip-frontend
 npm install
 ```
 
-### 3. アプリを起動
+### 3. 環境変数を設定
+
+```bash
+cp .env.example .env
+```
+
+`.env` に API 接続先や Google Maps API キーを設定してください。`.env` はコミットしないでください。
+
+### 4. アプリを起動
 
 iOS シミュレータで起動:
 

@@ -1,6 +1,5 @@
-import * as Location from "expo-location";
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -11,46 +10,46 @@ import {
   View,
 } from "react-native";
 
-import { getSpots, Spot } from "@/api/spots";
+import { deleteFavorite, Favorite, getFavorites } from "@/api/favorites";
 import { getAccessToken } from "@/components/auth/auth-storage";
 
-export default function SpotsScreen() {
-  const [spots, setSpots] = useState<Spot[]>([]);
+export default function FavoriteSpotsScreen() {
+  const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    load();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [])
+  );
 
   async function load() {
     try {
       setIsLoading(true);
       setError(null);
-
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setError("位置情報の権限が必要です");
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({});
       const token = await getAccessToken();
       if (!token) {
         setError("ログインが必要です");
         return;
       }
-
-      const data = await getSpots(
-        location.coords.latitude,
-        location.coords.longitude,
-        token
-      );
-      setSpots(data);
+      const data = await getFavorites(token);
+      setFavorites(data);
     } catch {
-      setError("スポットの取得に失敗しました");
+      setError("お気に入りの取得に失敗しました");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      const token = await getAccessToken();
+      if (!token) return;
+      await deleteFavorite(id, token);
+      setFavorites((prev) => prev.filter((f) => f.id !== id));
+    } catch {
+      // no-op
     }
   }
 
@@ -76,27 +75,25 @@ export default function SpotsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>周辺のスポット</Text>
+        <Text style={styles.title}>お気に入りスポット</Text>
       </View>
       <FlatList
-        data={spots}
-        keyExtractor={(item) => item.place_id}
+        data={favorites}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>近くにスポットが見つかりませんでした</Text>
+          <Text style={styles.emptyText}>お気に入りスポットはまだありません</Text>
         }
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => router.push(`/(tabs)/spots/${item.place_id}`)}
-          >
-            <Text style={styles.spotName}>{item.name}</Text>
-            <Text style={styles.spotDistance}>
-              {item.distance_km < 1
-                ? `${Math.round(item.distance_km * 1000)}m`
-                : `${item.distance_km.toFixed(1)}km`}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.card}>
+            <Text style={styles.spotName}>{item.place_name}</Text>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => handleDelete(item.id)}
+            >
+              <Text style={styles.deleteText}>削除</Text>
+            </TouchableOpacity>
+          </View>
         )}
       />
     </SafeAreaView>
@@ -146,10 +143,16 @@ const styles = StyleSheet.create({
     color: "#1a1a1a",
     flex: 1,
   },
-  spotDistance: {
-    fontSize: 14,
+  deleteButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#d5cec3",
+  },
+  deleteText: {
+    fontSize: 12,
     color: "#888",
-    marginLeft: 8,
   },
   emptyText: {
     textAlign: "center",

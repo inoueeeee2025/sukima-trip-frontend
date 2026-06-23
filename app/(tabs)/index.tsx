@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -371,6 +372,15 @@ export default function HomeScreen() {
           ) : null}
 
           <View style={styles.topBar} />
+          <Pressable
+            style={styles.favoriteButton}
+            onPress={() => router.push("/(tabs)/spots")}
+          >
+            <Image
+              source={require("@/assets/images/spots/favorite-button.png")}
+              style={styles.favoriteButtonImage}
+            />
+          </Pressable>
           <View style={styles.distanceBadge}>
             <Image
               source={require("@/assets/images/home/map2/footprint-icon.png")}
@@ -593,6 +603,20 @@ const styles = StyleSheet.create({
     color: "#111111",
     fontSize: 22,
     fontWeight: "700",
+  },
+  favoriteButton: {
+    position: "absolute",
+    top: 56,
+    left: 8,
+    width: 60,
+    height: 60,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  favoriteButtonImage: {
+    width: 60,
+    height: 60,
+    resizeMode: "contain",
   },
   coinArea: {
     position: "absolute",

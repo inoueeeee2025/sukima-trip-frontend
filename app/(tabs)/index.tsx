@@ -21,7 +21,10 @@ import { useAuth } from "@/components/auth/use-auth";
 import { DashboardPassport } from "@/components/dashboard/dashboard-passport";
 import { ThemedText } from "@/components/themed-text";
 import { StreetViewAvailabilityChecker } from "@/components/street-view/street-view-availability-checker";
-import { StreetViewPanel } from "@/components/street-view/street-view-panel";
+import {
+  StreetViewPanel,
+  type StreetViewPosition,
+} from "@/components/street-view/street-view-panel";
 import { ExploreMapPanel } from "@/components/explore-map/explore-map-panel";
 import { VisitedMapPanel } from "@/components/visited-map/visited-map-panel";
 
@@ -74,6 +77,37 @@ type StreetViewStatus =
   | "not_found"
   | "script_error"
   | "unknown_error";
+
+function calculateDistanceKm(
+  fromPoint: TripPoint,
+  toPoint: TripPoint
+) {
+  const earthRadiusKm = 6371;
+  const toRadians = (degree: number) =>
+    (degree * Math.PI) / 180;
+
+  const latitudeDifference = toRadians(
+    toPoint.latitude - fromPoint.latitude
+  );
+  const longitudeDifference = toRadians(
+    toPoint.longitude - fromPoint.longitude
+  );
+
+  const fromLatitude = toRadians(fromPoint.latitude);
+  const toLatitude = toRadians(toPoint.latitude);
+
+  const a =
+    Math.sin(latitudeDifference / 2) ** 2 +
+    Math.cos(fromLatitude) *
+      Math.cos(toLatitude) *
+      Math.sin(longitudeDifference / 2) ** 2;
+
+  return (
+    earthRadiusKm *
+    2 *
+    Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  );
+}
 
 export default function HomeScreen() {
   const { isLoggedIn, isCheckingAuth, logoutUser } = useAuth();
@@ -213,6 +247,63 @@ const hasUsedAllVirtualDistance =
     setSelectedLandingPoint(null);
   }
 
+  function handleStreetViewPositionChange(
+    position: StreetViewPosition
+  ) {
+    setVirtualTrip((current) => {
+      if (!current.currentPoint) {
+        return current;
+      }
+
+      const nextPoint: TripPoint = {
+        name: "Street View移動地点",
+        latitude: position.latitude,
+        longitude: position.longitude,
+      };
+
+      const movedDistanceKm = calculateDistanceKm(
+        current.currentPoint,
+        nextPoint
+      );
+
+      const remainingDistanceKm = Math.max(
+        current.totalVirtualDistanceKm -
+          current.usedVirtualDistanceKm,
+        0
+      );
+
+      const consumedDistanceKm = Math.min(
+        movedDistanceKm,
+        remainingDistanceKm
+      );
+
+      // 初期表示や同じ地点からの重複通知では距離を消費しない
+      if (consumedDistanceKm < 0.001) {
+        return current;
+      }
+
+      const movementLog: VirtualTripMovementLog = {
+        id: `${Date.now()}`,
+        fromPoint: current.currentPoint,
+        toPoint: nextPoint,
+        distanceKm: consumedDistanceKm,
+        movedAt: new Date().toISOString(),
+      };
+
+      return {
+        ...current,
+        currentPoint: nextPoint,
+        usedVirtualDistanceKm:
+          current.usedVirtualDistanceKm +
+          consumedDistanceKm,
+        movementLog: [
+          ...current.movementLog,
+          movementLog,
+        ],
+      };
+    });
+  }
+
   useEffect(() => {
     async function loadHomeData() {
       try {
@@ -308,6 +399,7 @@ const hasUsedAllVirtualDistance =
               console.log("streetViewStatus", status);
               setStreetViewStatus(status);
             }}
+            onPositionChange={handleStreetViewPositionChange}
           />
         </View>
       ) : (

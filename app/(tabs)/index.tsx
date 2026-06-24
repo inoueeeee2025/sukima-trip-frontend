@@ -23,9 +23,10 @@ import { DashboardPassport } from "@/components/dashboard/dashboard-passport";
 import { ThemedText } from "@/components/themed-text";
 import { StreetViewAvailabilityChecker } from "@/components/street-view/street-view-availability-checker";
 import {
-  StreetViewPanel,
   type StreetViewPosition,
+  type StreetViewStatus,
 } from "@/components/street-view/street-view-panel";
+import { WalkModeScreen } from "@/components/walk-mode/walk-mode-screen";
 import { ExploreMapPanel } from "@/components/explore-map/explore-map-panel";
 import { VisitedMapPanel } from "@/components/visited-map/visited-map-panel";
 
@@ -57,7 +58,7 @@ type VirtualTripMovementLog = {
   toPoint: TripPoint;
   distanceKm: number;
   movedAt: string;
-}
+};
 
 type VisitedRoutePoint = {
   latitude: number;
@@ -72,26 +73,13 @@ type VirtualTripState = {
   movementLog: VirtualTripMovementLog[];
 };
 
-type StreetViewStatus =
-  | "loading"
-  | "ready"
-  | "not_found"
-  | "script_error"
-  | "unknown_error";
-
-function calculateDistanceKm(
-  fromPoint: TripPoint,
-  toPoint: TripPoint
-) {
+function calculateDistanceKm(fromPoint: TripPoint, toPoint: TripPoint) {
   const earthRadiusKm = 6371;
-  const toRadians = (degree: number) =>
-    (degree * Math.PI) / 180;
+  const toRadians = (degree: number) => (degree * Math.PI) / 180;
 
-  const latitudeDifference = toRadians(
-    toPoint.latitude - fromPoint.latitude
-  );
+  const latitudeDifference = toRadians(toPoint.latitude - fromPoint.latitude);
   const longitudeDifference = toRadians(
-    toPoint.longitude - fromPoint.longitude
+    toPoint.longitude - fromPoint.longitude,
   );
 
   const fromLatitude = toRadians(fromPoint.latitude);
@@ -103,11 +91,7 @@ function calculateDistanceKm(
       Math.cos(toLatitude) *
       Math.sin(longitudeDifference / 2) ** 2;
 
-  return (
-    earthRadiusKm *
-    2 *
-    Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  );
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 export default function HomeScreen() {
@@ -146,12 +130,11 @@ export default function HomeScreen() {
   const hasSelectedLandingPoint = selectedLandingPoint !== null;
 
   const remainingVirtualDistanceKm = Math.max(
-  virtualTrip.totalVirtualDistanceKm -
-    virtualTrip.usedVirtualDistanceKm,
-  0
-);
+    virtualTrip.totalVirtualDistanceKm - virtualTrip.usedVirtualDistanceKm,
+    0,
+  );
 
-const hasUsedAllVirtualDistance =
+  const hasUsedAllVirtualDistance =
     isWalkMode && remainingVirtualDistanceKm === 0;
 
   async function handleLogout() {
@@ -202,7 +185,7 @@ const hasUsedAllVirtualDistance =
   const [mapCenter, setMapCenter] = useState<TripPoint>(DEFAULT_MAP_CENTER);
   // 最後に見ていたズーム倍率も共通で保持する
   const [mapZoom, setMapZoom] = useState(DEFAULT_MAP_ZOOM);
-  const homeMapCenter =virtualTrip.currentPoint ?? mapCenter;
+  const homeMapCenter = virtualTrip.currentPoint ?? mapCenter;
 
   function handleSelectLandingPoint(point: LandingPointSelection) {
     if (!isExploreMode) {
@@ -248,9 +231,11 @@ const hasUsedAllVirtualDistance =
     setSelectedLandingPoint(null);
   }
 
-  function handleStreetViewPositionChange(
-    position: StreetViewPosition
-  ) {
+  function handleExitWalkMode() {
+    setIsWalkMode(false);
+    setIsExploreMode(true);
+  }
+  function handleStreetViewPositionChange(position: StreetViewPosition) {
     setVirtualTrip((current) => {
       if (!current.currentPoint) {
         return current;
@@ -264,19 +249,15 @@ const hasUsedAllVirtualDistance =
 
       const movedDistanceKm = calculateDistanceKm(
         current.currentPoint,
-        nextPoint
+        nextPoint,
       );
 
       const remainingDistanceKm = Math.max(
-        current.totalVirtualDistanceKm -
-          current.usedVirtualDistanceKm,
-        0
+        current.totalVirtualDistanceKm - current.usedVirtualDistanceKm,
+        0,
       );
 
-      const consumedDistanceKm = Math.min(
-        movedDistanceKm,
-        remainingDistanceKm
-      );
+      const consumedDistanceKm = Math.min(movedDistanceKm, remainingDistanceKm);
 
       // 初期表示や同じ地点からの重複通知では距離を消費しない
       if (consumedDistanceKm < 0.001) {
@@ -295,12 +276,8 @@ const hasUsedAllVirtualDistance =
         ...current,
         currentPoint: nextPoint,
         usedVirtualDistanceKm:
-          current.usedVirtualDistanceKm +
-          consumedDistanceKm,
-        movementLog: [
-          ...current.movementLog,
-          movementLog,
-        ],
+          current.usedVirtualDistanceKm + consumedDistanceKm,
+        movementLog: [...current.movementLog, movementLog],
       };
     });
   }
@@ -330,7 +307,7 @@ const hasUsedAllVirtualDistance =
           ...current,
           totalVirtualDistanceKm: movementResult.virtual_distance_km,
           usedVirtualDistanceKm: movementResult.used_virtual_distance_km,
-        }))
+        }));
 
         const totalMovementResult = await getTotalMovements(token);
         console.log("totalMovementResult", totalMovementResult);
@@ -391,18 +368,17 @@ const hasUsedAllVirtualDistance =
   return (
     <SafeAreaView style={styles.container}>
       {isWalkMode && virtualTrip.currentPoint ? (
-        <View style={styles.mapArea}>
-          <StreetViewPanel
-            latitude={virtualTrip.currentPoint.latitude}
-            longitude={virtualTrip.currentPoint.longitude}
-            onStatusChange={(status) => {
-              // Street View側から返ってきた表示状態を保存する
-              console.log("streetViewStatus", status);
-              setStreetViewStatus(status);
-            }}
-            onPositionChange={handleStreetViewPositionChange}
-          />
-        </View>
+        <WalkModeScreen
+          latitude={virtualTrip.currentPoint.latitude}
+          longitude={virtualTrip.currentPoint.longitude}
+          remainingVirtualDistanceKm={remainingVirtualDistanceKm}
+          onStatusChange={(status) => {
+            console.log("streetViewStatus", status);
+            setStreetViewStatus(status);
+          }}
+          onPositionChange={handleStreetViewPositionChange}
+          onExit={handleExitWalkMode}
+        />
       ) : (
         <View style={styles.mapArea}>
           {isExploreMode ? (
@@ -466,7 +442,7 @@ const hasUsedAllVirtualDistance =
                 // Street Viewがない時は画面を切り替えず、Home(map)2上に案内を出す
                 setPendingStreetViewPoint(null);
                 setStreetViewUnavailableMessage(
-                  "この地点の近くにStreet Viewがありません"
+                  "この地点の近くにStreet Viewがありません",
                 );
               }}
             />

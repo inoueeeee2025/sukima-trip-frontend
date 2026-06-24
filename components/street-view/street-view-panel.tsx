@@ -17,7 +17,7 @@ type StreetViewPanelProps = {
   onPositionChange?: (position: StreetViewPosition) => void;
 };
 
-type StreetViewStatus =
+export type StreetViewStatus =
   | "loading"
   | "ready"
   | "not_found"

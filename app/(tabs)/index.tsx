@@ -22,7 +22,10 @@ import { useAuth } from "@/components/auth/use-auth";
 import { DashboardPassport } from "@/components/dashboard/dashboard-passport";
 import { ThemedText } from "@/components/themed-text";
 import { StreetViewAvailabilityChecker } from "@/components/street-view/street-view-availability-checker";
-import { StreetViewPanel } from "@/components/street-view/street-view-panel";
+import {
+  StreetViewPanel,
+  type StreetViewPosition,
+} from "@/components/street-view/street-view-panel";
 import { ExploreMapPanel } from "@/components/explore-map/explore-map-panel";
 import { VisitedMapPanel } from "@/components/visited-map/visited-map-panel";
 
@@ -48,6 +51,14 @@ type TripPoint = {
   longitude: number;
 };
 
+type VirtualTripMovementLog = {
+  id: string;
+  fromPoint: TripPoint;
+  toPoint: TripPoint;
+  distanceKm: number;
+  movedAt: string;
+}
+
 type VisitedRoutePoint = {
   latitude: number;
   longitude: number;
@@ -55,10 +66,10 @@ type VisitedRoutePoint = {
 
 type VirtualTripState = {
   startPoint: TripPoint | null;
-  currentPoint: TripPoint;
-  goalPoint: TripPoint | null;
+  currentPoint: TripPoint | null;
+  totalVirtualDistanceKm: number;
   usedVirtualDistanceKm: number;
-  remainingDistanceKm: number | null;
+  movementLog: VirtualTripMovementLog[];
 };
 
 type StreetViewStatus =
@@ -67,6 +78,37 @@ type StreetViewStatus =
   | "not_found"
   | "script_error"
   | "unknown_error";
+
+function calculateDistanceKm(
+  fromPoint: TripPoint,
+  toPoint: TripPoint
+) {
+  const earthRadiusKm = 6371;
+  const toRadians = (degree: number) =>
+    (degree * Math.PI) / 180;
+
+  const latitudeDifference = toRadians(
+    toPoint.latitude - fromPoint.latitude
+  );
+  const longitudeDifference = toRadians(
+    toPoint.longitude - fromPoint.longitude
+  );
+
+  const fromLatitude = toRadians(fromPoint.latitude);
+  const toLatitude = toRadians(toPoint.latitude);
+
+  const a =
+    Math.sin(latitudeDifference / 2) ** 2 +
+    Math.cos(fromLatitude) *
+      Math.cos(toLatitude) *
+      Math.sin(longitudeDifference / 2) ** 2;
+
+  return (
+    earthRadiusKm *
+    2 *
+    Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  );
+}
 
 export default function HomeScreen() {
   const { isLoggedIn, isCheckingAuth, logoutUser } = useAuth();
@@ -95,17 +137,22 @@ export default function HomeScreen() {
     useState<TripPoint | null>(null);
   const [virtualTrip, setVirtualTrip] = useState<VirtualTripState>({
     startPoint: null,
-    currentPoint: {
-      name: "現在地未設定",
-      latitude: 0,
-      longitude: 0,
-    },
-    goalPoint: null,
+    currentPoint: null,
+    totalVirtualDistanceKm: 0,
     usedVirtualDistanceKm: 0,
-    remainingDistanceKm: null,
+    movementLog: [],
   });
 
   const hasSelectedLandingPoint = selectedLandingPoint !== null;
+
+  const remainingVirtualDistanceKm = Math.max(
+  virtualTrip.totalVirtualDistanceKm -
+    virtualTrip.usedVirtualDistanceKm,
+  0
+);
+
+const hasUsedAllVirtualDistance =
+    isWalkMode && remainingVirtualDistanceKm === 0;
 
   async function handleLogout() {
     await logoutUser();
@@ -116,14 +163,10 @@ export default function HomeScreen() {
     setPendingStreetViewPoint(null);
     setVirtualTrip({
       startPoint: null,
-      currentPoint: {
-        name: "現在地未設定",
-        latitude: 0,
-        longitude: 0,
-      },
-      goalPoint: null,
+      currentPoint: null,
+      totalVirtualDistanceKm: 0,
       usedVirtualDistanceKm: 0,
-      remainingDistanceKm: null,
+      movementLog: [],
     });
     setProfile(null);
     setTodayMovement(null);
@@ -159,11 +202,7 @@ export default function HomeScreen() {
   const [mapCenter, setMapCenter] = useState<TripPoint>(DEFAULT_MAP_CENTER);
   // 最後に見ていたズーム倍率も共通で保持する
   const [mapZoom, setMapZoom] = useState(DEFAULT_MAP_ZOOM);
-  const homeMapCenter =
-    virtualTrip.currentPoint.latitude === 0 &&
-    virtualTrip.currentPoint.longitude === 0
-      ? mapCenter
-      : virtualTrip.currentPoint;
+  const homeMapCenter =virtualTrip.currentPoint ?? mapCenter;
 
   function handleSelectLandingPoint(point: LandingPointSelection) {
     if (!isExploreMode) {
@@ -209,6 +248,63 @@ export default function HomeScreen() {
     setSelectedLandingPoint(null);
   }
 
+  function handleStreetViewPositionChange(
+    position: StreetViewPosition
+  ) {
+    setVirtualTrip((current) => {
+      if (!current.currentPoint) {
+        return current;
+      }
+
+      const nextPoint: TripPoint = {
+        name: "Street View移動地点",
+        latitude: position.latitude,
+        longitude: position.longitude,
+      };
+
+      const movedDistanceKm = calculateDistanceKm(
+        current.currentPoint,
+        nextPoint
+      );
+
+      const remainingDistanceKm = Math.max(
+        current.totalVirtualDistanceKm -
+          current.usedVirtualDistanceKm,
+        0
+      );
+
+      const consumedDistanceKm = Math.min(
+        movedDistanceKm,
+        remainingDistanceKm
+      );
+
+      // 初期表示や同じ地点からの重複通知では距離を消費しない
+      if (consumedDistanceKm < 0.001) {
+        return current;
+      }
+
+      const movementLog: VirtualTripMovementLog = {
+        id: `${Date.now()}`,
+        fromPoint: current.currentPoint,
+        toPoint: nextPoint,
+        distanceKm: consumedDistanceKm,
+        movedAt: new Date().toISOString(),
+      };
+
+      return {
+        ...current,
+        currentPoint: nextPoint,
+        usedVirtualDistanceKm:
+          current.usedVirtualDistanceKm +
+          consumedDistanceKm,
+        movementLog: [
+          ...current.movementLog,
+          movementLog,
+        ],
+      };
+    });
+  }
+
   useEffect(() => {
     async function loadHomeData() {
       try {
@@ -229,8 +325,12 @@ export default function HomeScreen() {
         console.log("movementResult", movementResult);
         setTodayMovement(movementResult);
 
-        //今後ここで、movementResult.real_distance_kmを
-        //virtualTrip.usedVirtualDistanceKmやremainingDistanceKmに反映する
+        //APIから取得した仮想距離と消費済み距離を仮想旅行のstateへ反映する
+        setVirtualTrip((current) => ({
+          ...current,
+          totalVirtualDistanceKm: movementResult.virtual_distance_km,
+          usedVirtualDistanceKm: movementResult.used_virtual_distance_km,
+        }))
 
         const totalMovementResult = await getTotalMovements(token);
         console.log("totalMovementResult", totalMovementResult);
@@ -290,7 +390,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {isWalkMode ? (
+      {isWalkMode && virtualTrip.currentPoint ? (
         <View style={styles.mapArea}>
           <StreetViewPanel
             latitude={virtualTrip.currentPoint.latitude}
@@ -300,6 +400,7 @@ export default function HomeScreen() {
               console.log("streetViewStatus", status);
               setStreetViewStatus(status);
             }}
+            onPositionChange={handleStreetViewPositionChange}
           />
         </View>
       ) : (
@@ -353,7 +454,7 @@ export default function HomeScreen() {
 
                   setVirtualTrip((current) => ({
                     ...current,
-                    startPoint: correctedPoint,
+                    startPoint: current.startPoint ?? correctedPoint,
                     currentPoint: correctedPoint,
                   }));
                   setPendingStreetViewPoint(null);

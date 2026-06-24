@@ -5,10 +5,16 @@ import { WebView } from "react-native-webview";
 import { GOOGLE_MAPS_API_KEY } from "@/api/config";
 import { ThemedText } from "@/components/themed-text";
 
+export type StreetViewPosition = {
+  latitude: number;
+  longitude: number;
+};
+
 type StreetViewPanelProps = {
   latitude: number;
   longitude: number;
   onStatusChange?: (status: StreetViewStatus) => void;
+  onPositionChange?: (position: StreetViewPosition) => void;
 };
 
 type StreetViewStatus =
@@ -22,6 +28,7 @@ export function StreetViewPanel({
   latitude,
   longitude,
   onStatusChange,
+  onPositionChange,
 }: StreetViewPanelProps) {
   const WebViewRef = useRef<WebView>(null);
 
@@ -91,6 +98,24 @@ export function StreetViewPanel({
                   disableDefaultUI: false
                 }
               );
+
+              // Street Viewの表示地点が変わった時に新しい座標をReact Native側へ送る
+              panorama.addListener("position_changed", function() {
+                const currentPosition = panorama.getPosition();
+
+                if (!currentPosition) {
+                  return;
+                }
+
+                window.ReactNativeWebView.postMessage(
+                  JSON.stringify({
+                    type: "streetViewPositionChanged",
+                    latitude: currentPosition.lat(),
+                    longitude: currentPosition.lng()
+                  })
+                );
+              });
+
               return;
             }
 
@@ -167,6 +192,14 @@ export function StreetViewPanel({
 
         if (data.type === "streetViewStatus") {
           onStatusChange?.(data.status);
+          return;
+        }
+
+        if (data.type === "streetViewPositionChanged") {
+          onPositionChange?.({
+            latitude: data.latitude,
+            longitude: data.longitude,
+          });
         }
       }}
     />

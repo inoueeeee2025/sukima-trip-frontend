@@ -560,6 +560,9 @@ const hasUsedAllVirtualDistance =
               <DashboardPassport
                 totalMovement={totalMovement}
                 onLogout={handleLogout}
+                avatarUrl={profile?.avatar_url}
+                name={profile?.name}
+                gender={profile?.gender}
               />
             </View>
           ) : null}

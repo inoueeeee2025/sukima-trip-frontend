@@ -17,6 +17,7 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -63,12 +64,12 @@ export default function ProfileScreen() {
           <>
             {/* アバター */}
             <View style={styles.avatarWrap}>
-              {profile.avatar_url ? (
+              {profile.avatar_url && !avatarError ? (
                 <View style={styles.avatarClip}>
                   <Image
                     source={{ uri: profile.avatar_url }}
                     style={styles.avatarImage}
-                    onError={() => {}}
+                    onError={() => setAvatarError(true)}
                   />
                 </View>
               ) : (

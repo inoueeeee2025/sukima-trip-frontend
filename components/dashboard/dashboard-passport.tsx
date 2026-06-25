@@ -75,7 +75,7 @@ export function DashboardPassport({
             <View style={styles.profileRow}>
               <View style={styles.profileField}>
                 <ThemedText style={styles.profileLabel}>氏名</ThemedText>
-                <ThemedText style={styles.profileValue}>{name ?? "-"}</ThemedText>
+                <ThemedText style={styles.profileValue}>{name || "未設定"}</ThemedText>
               </View>
               <View style={styles.profileField}>
                 <ThemedText style={styles.profileLabel}>性別</ThemedText>

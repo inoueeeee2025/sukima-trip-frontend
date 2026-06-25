@@ -4,7 +4,7 @@ export type ProfileResponse = {
     id: string;
     name: string;
     gender?: string;
-    email?: string;
+    avatar_url?: string;
 };
 
 export function getProfile(accessToken: string){

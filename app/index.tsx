@@ -12,6 +12,7 @@ export default function SplashScreen() {
   const scale   = useRef(new Animated.Value(1.08)).current;
   const screenOpacity = useRef(new Animated.Value(1)).current;
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     let cancelled = false;
 

@@ -64,10 +64,13 @@ export default function ProfileScreen() {
             {/* アバター */}
             <View style={styles.avatarWrap}>
               {profile.avatar_url ? (
-                <Image
-                  source={{ uri: profile.avatar_url }}
-                  style={styles.avatarImage}
-                />
+                <View style={styles.avatarClip}>
+                  <Image
+                    source={{ uri: profile.avatar_url }}
+                    style={styles.avatarImage}
+                    onError={() => {}}
+                  />
+                </View>
               ) : (
                 <View style={styles.avatarPlaceholder}>
                   <Text style={styles.avatarIcon}>👤</Text>
@@ -111,12 +114,18 @@ const styles = StyleSheet.create({
   avatarWrap: {
     alignItems: "center",
   },
-  avatarImage: {
+  avatarClip: {
     width: 100,
     height: 100,
     borderRadius: 50,
+    overflow: "hidden",
     borderWidth: 2,
     borderColor: "#d5cec3",
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    resizeMode: "cover",
   },
   avatarPlaceholder: {
     width: 100,

@@ -1,4 +1,5 @@
 import { Image, Pressable, StyleSheet, View } from "react-native";
+import { useState } from "react";
 
 import { TotalMovementResponse } from "@/api/movements";
 import { ThemedText } from "@/components/themed-text";
@@ -20,6 +21,7 @@ export function DashboardPassport({
 }: DashboardPassportProps) {
   const totalDistanceKm =
     totalMovement?.total_real_distance_km.toLocaleString() ?? "-";
+  const [avatarError, setAvatarError] = useState(false);
 
   return (
     <View style={styles.dashboardPanel}>
@@ -43,11 +45,12 @@ export function DashboardPassport({
 
         <View style={styles.passportInfoArea}>
           <View style={styles.passportCharacterArea}>
-            {avatarUrl ? (
+            {avatarUrl && !avatarError ? (
               <View style={styles.passportAvatarWrap}>
                 <Image
                   source={{ uri: avatarUrl }}
                   style={styles.passportAvatar}
+                  onError={() => setAvatarError(true)}
                 />
               </View>
             ) : (
@@ -76,7 +79,7 @@ export function DashboardPassport({
               </View>
               <View style={styles.profileField}>
                 <ThemedText style={styles.profileLabel}>性別</ThemedText>
-                <ThemedText style={styles.profileValue}>{gender ?? "-"}</ThemedText>
+                <ThemedText style={styles.profileValue}>{gender || "未設定"}</ThemedText>
               </View>
             </View>
 

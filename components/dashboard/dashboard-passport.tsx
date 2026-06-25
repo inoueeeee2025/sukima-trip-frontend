@@ -6,11 +6,17 @@ import { ThemedText } from "@/components/themed-text";
 type DashboardPassportProps = {
   totalMovement: TotalMovementResponse | null;
   onLogout: () => void;
+  avatarUrl?: string | null;
+  name?: string | null;
+  gender?: string | null;
 };
 
 export function DashboardPassport({
   totalMovement,
   onLogout,
+  avatarUrl,
+  name,
+  gender,
 }: DashboardPassportProps) {
   const totalDistanceKm =
     totalMovement?.total_real_distance_km.toLocaleString() ?? "-";
@@ -41,10 +47,17 @@ export function DashboardPassport({
               source={require("@/assets/images/dashboard/passport-charactor-background.png")}
               style={styles.passportCharacterBackground}
             />
-            <Image
-              source={require("@/assets/images/dashboard/passport-charactor.png")}
-              style={styles.passportCharacter}
-            />
+            {avatarUrl ? (
+              <Image
+                source={{ uri: avatarUrl }}
+                style={styles.passportAvatar}
+              />
+            ) : (
+              <Image
+                source={require("@/assets/images/dashboard/passport-charactor.png")}
+                style={styles.passportCharacter}
+              />
+            )}
             <Image
               source={require("@/assets/images/home/map2/footprint-icon.png")}
               style={styles.passportFootprint}
@@ -55,11 +68,11 @@ export function DashboardPassport({
             <View style={styles.profileRow}>
               <View style={styles.profileField}>
                 <ThemedText style={styles.profileLabel}>氏名</ThemedText>
-                <ThemedText style={styles.profileValue}>○○○○</ThemedText>
+                <ThemedText style={styles.profileValue}>{name ?? "-"}</ThemedText>
               </View>
               <View style={styles.profileField}>
                 <ThemedText style={styles.profileLabel}>性別</ThemedText>
-                <ThemedText style={styles.profileValue}>○</ThemedText>
+                <ThemedText style={styles.profileValue}>{gender ?? "-"}</ThemedText>
               </View>
             </View>
 
@@ -159,6 +172,12 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     resizeMode: "contain",
+  },
+  passportAvatar: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    resizeMode: "cover",
   },
   passportFootprint: {
     position: "absolute",

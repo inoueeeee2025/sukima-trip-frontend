@@ -1,9 +1,5 @@
-import {
-  ImageBackground,
-  Pressable,
-  StyleSheet,
-  View,
-} from "react-native";
+import { useState } from "react";
+import { ImageBackground, Pressable, StyleSheet, View } from "react-native";
 
 import {
   StreetViewPanel,
@@ -19,9 +15,7 @@ type WalkModeScreenProps = {
   longitude: number;
   remainingVirtualDistanceKm: number;
   onStatusChange: (status: StreetViewStatus) => void;
-  onPositionChange: (
-    position: StreetViewPosition
-  ) => void;
+  onPositionChange: (position: StreetViewPosition) => void;
   onExit: () => void;
 };
 
@@ -33,6 +27,7 @@ export function WalkModeScreen({
   onPositionChange,
   onExit,
 }: WalkModeScreenProps) {
+  const [isNearestSpotCardOpen, setIsNearestSpotCardOpen] = useState(true);
   return (
     <View style={styles.container}>
       <StreetViewPanel
@@ -43,11 +38,16 @@ export function WalkModeScreen({
       />
 
       <View style={styles.topOverlay}>
-        <View style={styles.directionButton}>
+        <Pressable
+          style={styles.directionButton}
+          onPress={() => {
+            setIsNearestSpotCardOpen((current) => !current);
+          }}
+        >
           <ThemedText style={styles.directionArrow}>
-            ↑
+           ↑
           </ThemedText>
-        </View>
+        </Pressable>
 
         <View style={styles.remainingSignWrapper}>
           <View style={styles.hangingLineLeft} />
@@ -59,40 +59,31 @@ export function WalkModeScreen({
             imageStyle={styles.remainingSignImage}
             resizeMode="stretch"
           >
-            <ThemedText style={styles.remainingLabel}>
-              残り
-            </ThemedText>
+            <ThemedText style={styles.remainingLabel}>残り</ThemedText>
             <ThemedText style={styles.remainingNumber}>
               {remainingVirtualDistanceKm.toFixed(0)}
             </ThemedText>
-            <ThemedText style={styles.remainingUnit}>
-              km
-            </ThemedText>
+            <ThemedText style={styles.remainingUnit}>km</ThemedText>
           </ImageBackground>
         </View>
 
-        <Pressable
-          style={styles.closeButton}
-          onPress={onExit}
-        >
-          <ThemedText style={styles.closeButtonText}>
-            ×
-          </ThemedText>
+        <Pressable style={styles.closeButton} onPress={onExit}>
+          <ThemedText style={styles.closeButtonText}>×</ThemedText>
         </Pressable>
       </View>
 
-      <View style={styles.nearestSpotCard}>
-        <ThemedText style={styles.nearestSpotHeading}>
-          ^　最短スポット案内
-        </ThemedText>
-        <ThemedText style={styles.nearestSpotName}>
-          エッフェル塔まで
-        </ThemedText>
-        <ThemedText style={styles.nearestSpotDistance}>
-          約 200 km
-        </ThemedText>
-      </View>
-
+      {isNearestSpotCardOpen ? (
+        <View style={styles.nearestSpotCard}>
+          <ThemedText style={styles.nearestSpotHeading}>
+            ^　最短スポット案内
+          </ThemedText>
+          <ThemedText style={styles.nearestSpotName}>
+            エッフェル塔まで
+          </ThemedText>
+          <ThemedText style={styles.nearestSpotDistance}>約 200 km</ThemedText>
+        </View>
+      ) : null}
+      
       <View style={styles.locationPill}>
         <ThemedText style={styles.locationText}>
           秋田市, 秋田県

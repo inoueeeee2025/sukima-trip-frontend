@@ -114,8 +114,16 @@ export default function FavoriteSpotsScreen() {
           renderItem={({ item }) => (
             <View style={styles.cardOuter}>
               <View style={styles.card}>
-                {/* 写真エリア（名前バナーをオーバーレイ） */}
-                <View style={styles.photoArea}>
+                {/* 写真エリア（タップで詳細へ遷移、名前バナーをオーバーレイ） */}
+                <TouchableOpacity
+                  style={styles.photoArea}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(tabs)/spots/[id]",
+                      params: { id: item.place_id, name: item.name },
+                    })
+                  }
+                >
                   <View style={styles.photoPlaceholder} />
                   {/* スポット名バナー：写真上にオーバーレイ */}
                   <View style={styles.nameBanner}>
@@ -123,7 +131,7 @@ export default function FavoriteSpotsScreen() {
                       {item.name}
                     </Text>
                   </View>
-                </View>
+                </TouchableOpacity>
                 {/* 下部ボタンストリップ */}
                 <View style={styles.bottomStrip}>
                   <TouchableOpacity
@@ -147,7 +155,7 @@ export default function FavoriteSpotsScreen() {
               </View>
               {/* コインバッジ：カード左上角にオーバーラップ */}
               <View style={styles.coinBadge}>
-                <Text style={styles.coinBadgeText}>{item.coin_amount}</Text>
+                <Text style={styles.coinBadgeText}>{item.coin_amount ?? 0}</Text>
               </View>
             </View>
           )}

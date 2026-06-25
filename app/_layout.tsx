@@ -13,8 +13,9 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
-    const [loaded] = useFonts({
+  const [loaded] = useFonts({
     NotoSerifJP: require("@/assets/fonts/NotoSerifJP-VariableFont_wght.ttf"),
+    MochiyPopOne: require("@/assets/fonts/MochiyPopOne-Regular.ttf"),
   });
 
   if (!loaded) {

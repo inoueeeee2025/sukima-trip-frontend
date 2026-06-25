@@ -95,7 +95,8 @@ export function StreetViewPanel({
                   zoom: 1,
                   clickToGo: true,
                   linksControl: true,
-                  disableDefaultUI: false
+                  disableDefaultUI: false,
+                  addressControl: false,
                 }
               );
 

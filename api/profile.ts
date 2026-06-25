@@ -1,8 +1,5 @@
-import { router } from "expo-router";
-
 import { API_BASE_URL } from "@/api/config";
-import { apiRequest } from "@/api/client";
-import { removeAccessToken } from "@/components/auth/auth-storage";
+import { apiRequest, handle401 } from "@/api/client";
 
 export type ProfileResponse = {
     id: string;
@@ -36,8 +33,7 @@ export async function uploadAvatar(uri: string, accessToken: string): Promise<{ 
 
     const data = await response.json().catch(() => null);
     if (response.status === 401) {
-      await removeAccessToken();
-      router.replace("/(auth)/login");
+      await handle401();
       throw new Error("セッションが切れました。再度ログインしてください。");
     }
     if (!response.ok) throw new Error(data?.error ?? "画像のアップロードに失敗しました");

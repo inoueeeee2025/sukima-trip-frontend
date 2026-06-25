@@ -12,7 +12,7 @@ type RequestOptions = {
 // Promise.all で複数の 401 が同時に発生しても1回だけ処理するためのフラグ
 let isHandling401 = false;
 
-async function handle401() {
+export async function handle401() {
   if (isHandling401) return;
   isHandling401 = true;
   await removeAccessToken();

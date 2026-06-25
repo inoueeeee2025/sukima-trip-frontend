@@ -45,7 +45,6 @@ export default function ProfileScreen() {
               <ThemedText>名前: {profile.name}</ThemedText>
               <ThemedText>ユーザーID: {profile.id}</ThemedText>
               <ThemedText>性別: {profile.gender || "未設定"}</ThemedText>
-              <ThemedText>メール: {profile.email || "未設定"}</ThemedText>
             </>
           ) : (
             <ThemedText>プロフィールを取得できませんでした。</ThemedText>

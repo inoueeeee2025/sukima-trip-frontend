@@ -8,6 +8,7 @@ export type Favorite = {
   latitude: number;
   longitude: number;
   created_at: string;
+  coin_amount: number;
 };
 
 export type SaveFavoriteRequest = {

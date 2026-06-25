@@ -99,7 +99,7 @@ export default function LoginScreen() {
             style={[styles.button, isLoading && styles.buttonDisabled]}
           >
             {isLoading ? (
-              <ActivityIndicator color="#ffffff" />
+              <ActivityIndicator color={AppColors.white} />
             ) : (
               <Text style={styles.buttonText}>ログイン</Text>
             )}

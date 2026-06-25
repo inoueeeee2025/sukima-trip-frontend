@@ -32,6 +32,7 @@ export const AppColors = {
   inputBackground: '#f6ebc6',
   inputBorder: '#9e171a',
   danger: '#c0392b',
+  white: '#ffffff',
 };
 
 export const Fonts = Platform.select({

@@ -43,10 +43,6 @@ export function DashboardPassport({
 
         <View style={styles.passportInfoArea}>
           <View style={styles.passportCharacterArea}>
-            <Image
-              source={require("@/assets/images/dashboard/passport-charactor-background.png")}
-              style={styles.passportCharacterBackground}
-            />
             {avatarUrl ? (
               <View style={styles.passportAvatarWrap}>
                 <Image
@@ -55,10 +51,16 @@ export function DashboardPassport({
                 />
               </View>
             ) : (
-              <Image
-                source={require("@/assets/images/dashboard/passport-charactor.png")}
-                style={styles.passportCharacter}
-              />
+              <>
+                <Image
+                  source={require("@/assets/images/dashboard/passport-charactor-background.png")}
+                  style={styles.passportCharacterBackground}
+                />
+                <Image
+                  source={require("@/assets/images/dashboard/passport-charactor.png")}
+                  style={styles.passportCharacter}
+                />
+              </>
             )}
             <Image
               source={require("@/assets/images/home/map2/footprint-icon.png")}
@@ -176,14 +178,16 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   passportAvatarWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 80,
+    borderRadius: 6,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#d5cec3",
   },
   passportAvatar: {
-    width: 64,
-    height: 64,
+    width: 72,
+    height: 80,
     resizeMode: "cover",
   },
   passportFootprint: {

@@ -1,4 +1,5 @@
 import { Image, Pressable, StyleSheet, View } from "react-native";
+import { useState } from "react";
 
 import { TotalMovementResponse } from "@/api/movements";
 import { ThemedText } from "@/components/themed-text";
@@ -6,14 +7,21 @@ import { ThemedText } from "@/components/themed-text";
 type DashboardPassportProps = {
   totalMovement: TotalMovementResponse | null;
   onLogout: () => void;
+  avatarUrl?: string | null;
+  name?: string | null;
+  gender?: string | null;
 };
 
 export function DashboardPassport({
   totalMovement,
   onLogout,
+  avatarUrl,
+  name,
+  gender,
 }: DashboardPassportProps) {
   const totalDistanceKm =
     totalMovement?.total_real_distance_km.toLocaleString() ?? "-";
+  const [avatarError, setAvatarError] = useState(false);
 
   return (
     <View style={styles.dashboardPanel}>
@@ -37,14 +45,26 @@ export function DashboardPassport({
 
         <View style={styles.passportInfoArea}>
           <View style={styles.passportCharacterArea}>
-            <Image
-              source={require("@/assets/images/dashboard/passport-charactor-background.png")}
-              style={styles.passportCharacterBackground}
-            />
-            <Image
-              source={require("@/assets/images/dashboard/passport-charactor.png")}
-              style={styles.passportCharacter}
-            />
+            {avatarUrl && !avatarError ? (
+              <View style={styles.passportAvatarWrap}>
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={styles.passportAvatar}
+                  onError={() => setAvatarError(true)}
+                />
+              </View>
+            ) : (
+              <>
+                <Image
+                  source={require("@/assets/images/dashboard/passport-charactor-background.png")}
+                  style={styles.passportCharacterBackground}
+                />
+                <Image
+                  source={require("@/assets/images/dashboard/passport-charactor.png")}
+                  style={styles.passportCharacter}
+                />
+              </>
+            )}
             <Image
               source={require("@/assets/images/home/map2/footprint-icon.png")}
               style={styles.passportFootprint}
@@ -55,11 +75,11 @@ export function DashboardPassport({
             <View style={styles.profileRow}>
               <View style={styles.profileField}>
                 <ThemedText style={styles.profileLabel}>氏名</ThemedText>
-                <ThemedText style={styles.profileValue}>○○○○</ThemedText>
+                <ThemedText style={styles.profileValue}>{name || "未設定"}</ThemedText>
               </View>
               <View style={styles.profileField}>
                 <ThemedText style={styles.profileLabel}>性別</ThemedText>
-                <ThemedText style={styles.profileValue}>○</ThemedText>
+                <ThemedText style={styles.profileValue}>{gender || "未設定"}</ThemedText>
               </View>
             </View>
 
@@ -159,6 +179,19 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     resizeMode: "contain",
+  },
+  passportAvatarWrap: {
+    width: 72,
+    height: 80,
+    borderRadius: 6,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#d5cec3",
+  },
+  passportAvatar: {
+    width: 72,
+    height: 80,
+    resizeMode: "cover",
   },
   passportFootprint: {
     position: "absolute",

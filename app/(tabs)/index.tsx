@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 
+import { getCoinBalance } from "@/api/coins";
 import {
   getTodayMovements,
   getTotalMovements,
@@ -103,6 +104,9 @@ export default function HomeScreen() {
   const [totalMovement, setTotalMovement] =
     useState<TotalMovementResponse | null>(null);
   const [isMovementLoading, setIsMovementLoading] = useState(true);
+  const [coinBalance, setCoinBalance] = useState<number | null>(null);
+  // setter は #62（バックエンドに座標追加）対応後に使用予定
+  const [visitedRoute] = useState<VisitedRoutePoint[]>([]);
   const [isExploreMode, setIsExploreMode] = useState(false);
   const [isWalkMode, setIsWalkMode] = useState(false);
   // Street Viewが表示できない原因をログで追うための状態
@@ -161,22 +165,6 @@ export default function HomeScreen() {
     latitude: 36.2048,
     longitude: 138.2529,
   };
-
-  // API連携前の仮ルート。VisitedMapPanel で通った道筋を線で表示する
-  const TEST_VISITED_ROUTE: VisitedRoutePoint[] = [
-    {
-      latitude: 35.659494,
-      longitude: 139.700545,
-    },
-    {
-      latitude: 35.670168,
-      longitude: 139.702687,
-    },
-    {
-      latitude: 35.681236,
-      longitude: 139.767125,
-    },
-  ];
 
   // 両モードで共通に使う初期ズーム
   const DEFAULT_MAP_ZOOM = 5;
@@ -291,18 +279,25 @@ export default function HomeScreen() {
           setProfile(null);
           setTodayMovement(null);
           setTotalMovement(null);
+          setCoinBalance(null);
           return;
         }
-        //1.プロフィールを取得
-        const profileResult = await getProfile(token);
+
+        // 独立したAPIを並列取得
+        const [profileResult, movementResult, totalMovementResult, coinResult] =
+          await Promise.all([
+            getProfile(token),
+            getTodayMovements(token),
+            getTotalMovements(token),
+            getCoinBalance(token),
+          ]);
+
         setProfile(profileResult);
-
-        //2.今日の移動データ（movements）を取得
-        const movementResult = await getTodayMovements(token);
-        console.log("movementResult", movementResult);
         setTodayMovement(movementResult);
+        setTotalMovement(totalMovementResult);
+        setCoinBalance(coinResult.balance);
 
-        //APIから取得した仮想距離と消費済み距離を仮想旅行のstateへ反映する
+        // 仮想距離と消費済み距離を仮想旅行のstateへ反映
         setVirtualTrip((current) => ({
           ...current,
           totalVirtualDistanceKm: movementResult.virtual_distance_km,
@@ -317,6 +312,7 @@ export default function HomeScreen() {
         setProfile(null);
         setTodayMovement(null);
         setTotalMovement(null);
+        setCoinBalance(null);
       } finally {
         setIsProfileLoading(false);
         setIsMovementLoading(false);
@@ -401,7 +397,7 @@ export default function HomeScreen() {
               latitude={homeMapCenter.latitude}
               longitude={homeMapCenter.longitude}
               zoom={mapZoom}
-              visitedRoute={TEST_VISITED_ROUTE}
+              visitedRoute={visitedRoute}
               onCenterChanged={({ latitude, longitude, zoom }) => {
                 setMapCenter((current) => ({
                   ...current,
@@ -448,7 +444,6 @@ export default function HomeScreen() {
             />
           ) : null}
 
-          <View style={styles.topBar} />
           <Pressable
             style={styles.favoriteButton}
             onPress={() => router.push("/(tabs)/spots")}
@@ -483,7 +478,9 @@ export default function HomeScreen() {
               source={require("@/assets/images/home/map1/coin-icon.png")}
               style={styles.coinIconImage}
             />
-            <ThemedText style={styles.coinText}>360</ThemedText>
+            <ThemedText style={styles.coinText}>
+              {isMovementLoading ? "..." : coinBalance ?? "-"}
+            </ThemedText>
           </View>
           {isExploreMode ? (
             <View style={styles.statusPill}>
@@ -543,6 +540,9 @@ export default function HomeScreen() {
               <DashboardPassport
                 totalMovement={totalMovement}
                 onLogout={handleLogout}
+                avatarUrl={profile?.avatar_url}
+                name={profile?.name}
+                gender={profile?.gender}
               />
             </View>
           ) : null}
@@ -643,17 +643,9 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     zIndex: 1,
   },
-  topBar: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 54,
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
-  },
   distanceBadge: {
     position: "absolute",
-    top: 61,
+    top: 10,
     alignSelf: "center",
     width: 160,
     height: 48,
@@ -683,7 +675,7 @@ const styles = StyleSheet.create({
   },
   favoriteButton: {
     position: "absolute",
-    top: 56,
+    top: 8,
     left: 8,
     width: 60,
     height: 60,
@@ -697,7 +689,7 @@ const styles = StyleSheet.create({
   },
   coinArea: {
     position: "absolute",
-    top: 56,
+    top: 8,
     right: 8,
     width: 67,
     height: 60,

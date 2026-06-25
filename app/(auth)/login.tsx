@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -12,6 +12,7 @@ import {
 } from "react-native";
 
 import { useAuth } from "@/components/auth/use-auth";
+import { AppColors } from "@/constants/theme";
 
 export default function LoginScreen() {
   const { loginUser } = useAuth();
@@ -20,6 +21,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const passwordRef = useRef<TextInput>(null);
 
   async function handleLogin() {
     if (!email || !password) {
@@ -62,6 +65,9 @@ export default function LoginScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              textContentType="emailAddress"
+              returnKeyType="next"
+              onSubmitEditing={() => passwordRef.current?.focus()}
               style={styles.input}
             />
           </View>
@@ -69,12 +75,16 @@ export default function LoginScreen() {
           <View style={styles.field}>
             <Text style={styles.label}>パスワード</Text>
             <TextInput
+              ref={passwordRef}
               value={password}
               onChangeText={setPassword}
               placeholder=""
               secureTextEntry
               autoCapitalize="none"
               autoCorrect={false}
+              textContentType="password"
+              returnKeyType="done"
+              onSubmitEditing={handleLogin}
               style={styles.input}
             />
           </View>
@@ -117,7 +127,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#60d0e5",
+    backgroundColor: AppColors.primary,
   },
   content: {
     flex: 1,
@@ -144,9 +154,9 @@ const styles = StyleSheet.create({
     color: "#1a1a1a",
   },
   input: {
-    backgroundColor: "#f6ebc6",
+    backgroundColor: AppColors.inputBackground,
     borderWidth: 2,
-    borderColor: "#9e171a",
+    borderColor: AppColors.inputBorder,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -154,12 +164,12 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   errorText: {
-    color: "#9e171a",
+    color: AppColors.inputBorder,
     fontSize: 13,
     textAlign: "center",
   },
   button: {
-    backgroundColor: "#c0392b",
+    backgroundColor: AppColors.danger,
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: "center",
@@ -176,7 +186,7 @@ const styles = StyleSheet.create({
   divider: {
     width: "100%",
     height: 1,
-    backgroundColor: "#9e171a",
+    backgroundColor: AppColors.inputBorder,
     opacity: 0.4,
   },
   registerSection: {

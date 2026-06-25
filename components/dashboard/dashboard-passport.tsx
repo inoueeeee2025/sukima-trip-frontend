@@ -48,10 +48,12 @@ export function DashboardPassport({
               style={styles.passportCharacterBackground}
             />
             {avatarUrl ? (
-              <Image
-                source={{ uri: avatarUrl }}
-                style={styles.passportAvatar}
-              />
+              <View style={styles.passportAvatarWrap}>
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={styles.passportAvatar}
+                />
+              </View>
             ) : (
               <Image
                 source={require("@/assets/images/dashboard/passport-charactor.png")}
@@ -173,10 +175,15 @@ const styles = StyleSheet.create({
     height: 72,
     resizeMode: "contain",
   },
+  passportAvatarWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    overflow: "hidden",
+  },
   passportAvatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 64,
+    height: 64,
     resizeMode: "cover",
   },
   passportFootprint: {

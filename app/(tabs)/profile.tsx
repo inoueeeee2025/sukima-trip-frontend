@@ -62,7 +62,9 @@ export default function ProfileScreen() {
               <ThemedText>ユーザーID: {profile.id}</ThemedText>
               <ThemedText>性別: {profile.gender || "未設定"}</ThemedText>
             </>
-          ) : null}
+          ) : (
+            <ThemedText>プロフィールを取得できませんでした。</ThemedText>
+          )}
         </View>
       </View>
     </SafeAreaView>

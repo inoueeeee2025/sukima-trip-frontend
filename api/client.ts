@@ -9,6 +9,18 @@ type RequestOptions = {
   headers?: Record<string, string>;
 };
 
+// Promise.all で複数の 401 が同時に発生しても1回だけ処理するためのフラグ
+let isHandling401 = false;
+
+async function handle401() {
+  if (isHandling401) return;
+  isHandling401 = true;
+  await removeAccessToken();
+  router.replace("/(auth)/login");
+  // 遷移後にフラグをリセット
+  setTimeout(() => { isHandling401 = false; }, 2000);
+}
+
 export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
@@ -27,8 +39,7 @@ export async function apiRequest<T>(
   const data = await response.json().catch(() => null);
 
   if (response.status === 401) {
-    await removeAccessToken();
-    router.replace("/(auth)/login");
+    await handle401();
     throw new Error("セッションが切れました。再度ログインしてください。");
   }
 

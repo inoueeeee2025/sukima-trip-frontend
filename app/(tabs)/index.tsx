@@ -464,7 +464,6 @@ const hasUsedAllVirtualDistance =
             />
           ) : null}
 
-          <View style={styles.topBar} />
           <Pressable
             style={styles.favoriteButton}
             onPress={() => router.push("/(tabs)/spots")}
@@ -660,14 +659,6 @@ const styles = StyleSheet.create({
   mapSelectLayer: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 1,
-  },
-  topBar: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 54,
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
   },
   distanceBadge: {
     position: "absolute",

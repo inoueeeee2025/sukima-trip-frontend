@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
   },
   distanceBadge: {
     position: "absolute",
-    top: 61,
+    top: 10,
     alignSelf: "center",
     width: 160,
     height: 48,
@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
   },
   favoriteButton: {
     position: "absolute",
-    top: 56,
+    top: 8,
     left: 8,
     width: 60,
     height: 60,
@@ -706,7 +706,7 @@ const styles = StyleSheet.create({
   },
   coinArea: {
     position: "absolute",
-    top: 56,
+    top: 8,
     right: 8,
     width: 67,
     height: 60,

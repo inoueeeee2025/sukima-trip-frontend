@@ -121,7 +121,8 @@ export default function HomeScreen() {
     useState<TotalMovementResponse | null>(null);
   const [isMovementLoading, setIsMovementLoading] = useState(true);
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
-  const [visitedRoute, setVisitedRoute] = useState<VisitedRoutePoint[]>([]);
+  // setter は #62（バックエンドに座標追加）対応後に使用予定
+  const [visitedRoute] = useState<VisitedRoutePoint[]>([]);
   const [isExploreMode, setIsExploreMode] = useState(false);
   const [isWalkMode, setIsWalkMode] = useState(false);
   // Street Viewが表示できない原因をログで追うための状態

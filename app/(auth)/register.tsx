@@ -3,6 +3,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   SafeAreaView,
@@ -34,7 +35,6 @@ export default function RegisterScreen() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
-  const [avatarWarning, setAvatarWarning] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const emailRef = useRef<TextInput>(null);
@@ -76,7 +76,10 @@ export default function RegisterScreen() {
       await saveAccessToken(result.access_token);
       if (avatarUri) {
         await uploadAvatar(avatarUri, result.access_token).catch(() => {
-          setAvatarWarning("プロフィール画像のアップロードに失敗しました。後で設定できます。");
+          Alert.alert(
+            "画像アップロード失敗",
+            "プロフィール画像のアップロードに失敗しました。後で設定できます。"
+          );
         });
       }
       router.replace("/(tabs)");
@@ -202,10 +205,6 @@ export default function RegisterScreen() {
             <Text style={styles.errorText}>{errorMessage}</Text>
           ) : null}
 
-          {avatarWarning ? (
-            <Text style={styles.warningText}>{avatarWarning}</Text>
-          ) : null}
-
           <Pressable
             onPress={handleRegister}
             disabled={isLoading}
@@ -319,11 +318,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: AppColors.inputBorder,
-    fontSize: 13,
-    textAlign: "center",
-  },
-  warningText: {
-    color: "#b07800",
     fontSize: 13,
     textAlign: "center",
   },

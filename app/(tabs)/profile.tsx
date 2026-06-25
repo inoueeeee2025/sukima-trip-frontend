@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   SafeAreaView,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
 
@@ -46,26 +48,45 @@ export default function ProfileScreen() {
       <View style={styles.content}>
         <ThemedText type="title">プロフィール</ThemedText>
 
-        <View style={styles.card}>
-          {isLoading ? (
+        {isLoading ? (
+          <View style={styles.center}>
             <ActivityIndicator size="large" color="#1f6f5f" />
-          ) : error ? (
-            <>
-              <ThemedText style={styles.errorText}>{error}</ThemedText>
-              <Pressable style={styles.retryButton} onPress={loadProfile}>
-                <ThemedText style={styles.retryText}>再試行</ThemedText>
-              </Pressable>
-            </>
-          ) : profile ? (
-            <>
+          </View>
+        ) : error ? (
+          <View style={styles.card}>
+            <ThemedText style={styles.errorText}>{error}</ThemedText>
+            <Pressable style={styles.retryButton} onPress={loadProfile}>
+              <ThemedText style={styles.retryText}>再試行</ThemedText>
+            </Pressable>
+          </View>
+        ) : profile ? (
+          <>
+            {/* アバター */}
+            <View style={styles.avatarWrap}>
+              {profile.avatar_url ? (
+                <Image
+                  source={{ uri: profile.avatar_url }}
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Text style={styles.avatarIcon}>👤</Text>
+                </View>
+              )}
+            </View>
+
+            {/* プロフィール情報 */}
+            <View style={styles.card}>
               <ThemedText>名前: {profile.name}</ThemedText>
               <ThemedText>ユーザーID: {profile.id}</ThemedText>
               <ThemedText>性別: {profile.gender || "未設定"}</ThemedText>
-            </>
-          ) : (
+            </View>
+          </>
+        ) : (
+          <View style={styles.card}>
             <ThemedText>プロフィールを取得できませんでした。</ThemedText>
-          )}
-        </View>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -81,8 +102,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 32,
     gap: 24,
+    alignItems: "center",
+  },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  avatarWrap: {
+    alignItems: "center",
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: "#d5cec3",
+  },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#d0d0d0",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarIcon: {
+    fontSize: 40,
   },
   card: {
+    width: "100%",
     gap: 12,
     padding: 16,
     borderRadius: 12,

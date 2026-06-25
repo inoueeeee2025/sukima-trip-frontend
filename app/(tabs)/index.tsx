@@ -18,7 +18,6 @@ import {
   TotalMovementResponse,
 } from "@/api/movements";
 import { getProfile, ProfileResponse } from "@/api/profile";
-import { getVisitedPlaces } from "@/api/visited-places";
 import { getAccessToken } from "@/components/auth/auth-storage";
 import { useAuth } from "@/components/auth/use-auth";
 import { DashboardPassport } from "@/components/dashboard/dashboard-passport";
@@ -302,39 +301,36 @@ const hasUsedAllVirtualDistance =
           setProfile(null);
           setTodayMovement(null);
           setTotalMovement(null);
+          setCoinBalance(null);
           return;
         }
-        //1.プロフィールを取得
-        const profileResult = await getProfile(token);
+
+        // 独立したAPIを並列取得
+        const [profileResult, movementResult, totalMovementResult, coinResult] =
+          await Promise.all([
+            getProfile(token),
+            getTodayMovements(token),
+            getTotalMovements(token),
+            getCoinBalance(token),
+          ]);
+
         setProfile(profileResult);
-
-        //2.今日の移動データ（movements）を取得
-        const movementResult = await getTodayMovements(token);
-        console.log("movementResult", movementResult);
         setTodayMovement(movementResult);
+        setTotalMovement(totalMovementResult);
+        setCoinBalance(coinResult.balance);
 
-        //APIから取得した仮想距離と消費済み距離を仮想旅行のstateへ反映する
+        // 仮想距離と消費済み距離を仮想旅行のstateへ反映
         setVirtualTrip((current) => ({
           ...current,
           totalVirtualDistanceKm: movementResult.virtual_distance_km,
           usedVirtualDistanceKm: movementResult.used_virtual_distance_km,
-        }))
-
-        const totalMovementResult = await getTotalMovements(token);
-        console.log("totalMovementResult", totalMovementResult);
-        setTotalMovement(totalMovementResult);
-
-        //3.コイン残高を取得
-        const coinResult = await getCoinBalance(token);
-        setCoinBalance(coinResult.balance);
-
-        //4.訪問済み場所を取得（ルート描画は座標データが必要なため別途対応）
-        await getVisitedPlaces(token);
+        }));
       } catch (error) {
         console.error("ホームデータ取得に失敗しました", error);
         setProfile(null);
         setTodayMovement(null);
         setTotalMovement(null);
+        setCoinBalance(null);
       } finally {
         setIsProfileLoading(false);
         setIsMovementLoading(false);
@@ -502,7 +498,9 @@ const hasUsedAllVirtualDistance =
               source={require("@/assets/images/home/map1/coin-icon.png")}
               style={styles.coinIconImage}
             />
-            <ThemedText style={styles.coinText}>{coinBalance ?? "-"}</ThemedText>
+            <ThemedText style={styles.coinText}>
+              {isMovementLoading ? "..." : coinBalance ?? "-"}
+            </ThemedText>
           </View>
           {isExploreMode ? (
             <View style={styles.statusPill}>

@@ -304,9 +304,7 @@ export default function HomeScreen() {
           usedVirtualDistanceKm: movementResult.used_virtual_distance_km,
         }));
 
-        const totalMovementResult = await getTotalMovements(token);
-        console.log("totalMovementResult", totalMovementResult);
-        setTotalMovement(totalMovementResult);
+      
       } catch (error) {
         console.error("ホームデータ取得に失敗しました", error);
         setProfile(null);

@@ -7,12 +7,11 @@ import { AppColors } from "@/constants/theme";
 
 const { width, height } = Dimensions.get("window");
 
-export default function SplashScreen() {
+export default function SplashRoute() {
   const opacity = useRef(new Animated.Value(0)).current;
   const scale   = useRef(new Animated.Value(1.08)).current;
   const screenOpacity = useRef(new Animated.Value(1)).current;
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     let cancelled = false;
 
@@ -33,6 +32,7 @@ export default function SplashScreen() {
     });
 
     return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

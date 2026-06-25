@@ -19,6 +19,7 @@ export default function RootLayout() {
 
   const [loaded] = useFonts({
     NotoSerifJP: require("@/assets/fonts/NotoSerifJP-VariableFont_wght.ttf"),
+    MochiyPopOne: require("@/assets/fonts/MochiyPopOne-Regular.ttf"),
   });
 
   useEffect(() => {

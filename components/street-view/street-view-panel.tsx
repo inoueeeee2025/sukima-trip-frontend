@@ -17,7 +17,7 @@ type StreetViewPanelProps = {
   onPositionChange?: (position: StreetViewPosition) => void;
 };
 
-type StreetViewStatus =
+export type StreetViewStatus =
   | "loading"
   | "ready"
   | "not_found"
@@ -95,7 +95,8 @@ export function StreetViewPanel({
                   zoom: 1,
                   clickToGo: true,
                   linksControl: true,
-                  disableDefaultUI: false
+                  disableDefaultUI: false,
+                  addressControl: false,
                 }
               );
 

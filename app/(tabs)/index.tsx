@@ -74,6 +74,20 @@ type VirtualTripState = {
   movementLog: VirtualTripMovementLog[];
 };
 
+type WalkSessionState = {
+  isActive: boolean;
+  startedAt: string | null;
+  realDistanceKm: number;
+  virtualDistanceKm: number;
+};
+
+const INITIAL_WALK_SESSION: WalkSessionState = {
+  isActive: false,
+  startedAt: null,
+  realDistanceKm: 0,
+  virtualDistanceKm: 0,
+};
+
 function calculateDistanceKm(fromPoint: TripPoint, toPoint: TripPoint) {
   const earthRadiusKm = 6371;
   const toRadians = (degree: number) => (degree * Math.PI) / 180;
@@ -107,6 +121,9 @@ export default function HomeScreen() {
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   // setter は #62（バックエンドに座標追加）対応後に使用予定
   const [visitedRoute] = useState<VisitedRoutePoint[]>([]);
+  // 探索中だけ増える一時的な距離データ。保存済みのtodayMovementとは分けて扱う
+  const [walkSession, setWalkSession] =
+    useState<WalkSessionState>(INITIAL_WALK_SESSION);
   const [isExploreMode, setIsExploreMode] = useState(false);
   const [isWalkMode, setIsWalkMode] = useState(false);
   // Street Viewが表示できない原因をログで追うための状態
@@ -146,6 +163,7 @@ export default function HomeScreen() {
     setIsDashboardOpen(false);
     setIsExploreMode(false);
     setIsWalkMode(false);
+    setWalkSession(INITIAL_WALK_SESSION);
     setSelectedLandingPoint(null);
     setPendingStreetViewPoint(null);
     setVirtualTrip({

@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { Animated, Dimensions, StyleSheet } from "react-native";
 
 import { getAccessToken } from "@/components/auth/auth-storage";
+import { AppColors } from "@/constants/theme";
 
 const { width, height } = Dimensions.get("window");
 
@@ -12,18 +13,25 @@ export default function SplashScreen() {
   const screenOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // フェードイン + ズームイン（1.08 → 1.0）
+    let cancelled = false;
+
     Animated.parallel([
       Animated.timing(opacity, { toValue: 1, duration: 700, useNativeDriver: true }),
       Animated.spring(scale, { toValue: 1, tension: 60, friction: 10, useNativeDriver: true }),
     ]).start(async () => {
       await new Promise((r) => setTimeout(r, 900));
-      const token = await getAccessToken();
+      if (cancelled) return;
 
-      // フェードアウト
+      const token = await getAccessToken();
+      if (cancelled) return;
+
       Animated.timing(screenOpacity, { toValue: 0, duration: 400, useNativeDriver: true })
-        .start(() => router.replace(token ? "/(tabs)" : "/(auth)/login"));
+        .start(() => {
+          if (!cancelled) router.replace(token ? "/(tabs)" : "/(auth)/login");
+        });
     });
+
+    return () => { cancelled = true; };
   }, []);
 
   return (
@@ -39,7 +47,7 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#60d0e5",
+    backgroundColor: AppColors.primary,
   },
   image: {
     width,

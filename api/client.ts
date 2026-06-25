@@ -1,6 +1,7 @@
-//目的：fetchを毎回画面に直書きしないようにするため
+import { router } from "expo-router";
 
 import { API_BASE_URL } from "./config";
+import { removeAccessToken } from "@/components/auth/auth-storage";
 
 type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "DELETE";
@@ -8,13 +9,17 @@ type RequestOptions = {
   headers?: Record<string, string>;
 };
 
-// body は「送信したいデータ本体」です。
-// たとえばログインならこういう部分です。
-// {
-//   email: 'test@example.com',
-//   password: 'password123'
-// }
-// これを body として渡して、JSON.stringify(body) で API に送れる形にしています。
+// Promise.all で複数の 401 が同時に発生しても1回だけ処理するためのフラグ
+let isHandling401 = false;
+
+export async function handle401() {
+  if (isHandling401) return;
+  isHandling401 = true;
+  await removeAccessToken();
+  router.replace("/(auth)/login");
+  // 遷移後にフラグをリセット
+  setTimeout(() => { isHandling401 = false; }, 2000);
+}
 
 export async function apiRequest<T>(
   path: string,
@@ -33,11 +38,14 @@ export async function apiRequest<T>(
 
   const data = await response.json().catch(() => null);
 
+  if (response.status === 401) {
+    await handle401();
+    throw new Error("セッションが切れました。再度ログインしてください。");
+  }
+
   if (!response.ok) {
-    throw new Error(data?.error ?? "API request failed");
-  }//共通エラーハンドリング
+    throw new Error(data?.error ?? "通信エラーが発生しました");
+  }
 
   return data as T;
 }
-
-

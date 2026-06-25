@@ -464,7 +464,6 @@ const hasUsedAllVirtualDistance =
             />
           ) : null}
 
-          <View style={styles.topBar} />
           <Pressable
             style={styles.favoriteButton}
             onPress={() => router.push("/(tabs)/spots")}
@@ -661,17 +660,9 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     zIndex: 1,
   },
-  topBar: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 54,
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
-  },
   distanceBadge: {
     position: "absolute",
-    top: 61,
+    top: 10,
     alignSelf: "center",
     width: 160,
     height: 48,
@@ -701,7 +692,7 @@ const styles = StyleSheet.create({
   },
   favoriteButton: {
     position: "absolute",
-    top: 56,
+    top: 8,
     left: 8,
     width: 60,
     height: 60,
@@ -715,7 +706,7 @@ const styles = StyleSheet.create({
   },
   coinArea: {
     position: "absolute",
-    top: 56,
+    top: 8,
     right: 8,
     width: 67,
     height: 60,

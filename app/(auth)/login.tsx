@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   buttonText: {
-    color: "#ffffff",
+    color: AppColors.white,
     fontWeight: "700",
     fontSize: 16,
   },

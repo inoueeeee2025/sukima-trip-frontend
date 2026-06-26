@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Image, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { getCoinBalance } from "@/api/coins";
+import { getCoinBalance, getTodayCoins } from "@/api/coins";
 import {
   getTodayMovements,
   getTotalMovements,
@@ -119,6 +119,7 @@ export default function HomeScreen() {
     useState<TotalMovementResponse | null>(null);
   const [isMovementLoading, setIsMovementLoading] = useState(true);
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
+  const [todayCoins, setTodayCoins] = useState<number | null>(null);
   // setter は #62（バックエンドに座標追加）対応後に使用予定
   const [visitedRoute] = useState<VisitedRoutePoint[]>([]);
   // アプリ起動中だけ増える一時的な距離データ。保存済みのtodayMovementとは分けて扱う
@@ -401,24 +402,28 @@ export default function HomeScreen() {
 
         if (!token) {
           setProfile(null);
+          setTodayMovement(null);
           setTotalMovement(null);
           setCoinBalance(null);
+          setTodayCoins(null);
           return;
         }
 
         // 独立したAPIを並列取得
-        const [profileResult, movementResult, totalMovementResult, coinResult] =
+        const [profileResult, movementResult, totalMovementResult, coinResult, todayCoinsResult] =
           await Promise.all([
             getProfile(token),
             getTodayMovements(token),
             getTotalMovements(token),
             getCoinBalance(token),
+            getTodayCoins(token),
           ]);
 
         setProfile(profileResult);
         setTodayMovement(movementResult);
         setTotalMovement(totalMovementResult);
         setCoinBalance(coinResult.balance);
+        setTodayCoins(todayCoinsResult.earned_today);
 
         // 仮想距離と消費済み距離を仮想旅行のstateへ反映
         setVirtualTrip((current) => ({
@@ -432,6 +437,7 @@ export default function HomeScreen() {
         setTodayMovement(null);
         setTotalMovement(null);
         setCoinBalance(null);
+        setTodayCoins(null);
       } finally {
         setIsProfileLoading(false);
         setIsMovementLoading(false);
@@ -440,6 +446,32 @@ export default function HomeScreen() {
 
     loadHomeData();
   }, []); //ホーム画面が開いた時にプロフィール取得が走る、tokenを読んで/profileを叩く、結果をprofile　stateに入れる
+
+  useEffect(() => {
+    if (!isDashboardOpen) return;
+
+    async function refreshDashboardData() {
+      const token = await getAccessToken();
+      if (!token) return;
+      try {
+        const [movementResult, totalMovementResult, coinResult, todayCoinsResult] =
+          await Promise.all([
+            getTodayMovements(token),
+            getTotalMovements(token),
+            getCoinBalance(token),
+            getTodayCoins(token),
+          ]);
+        setTodayMovement(movementResult);
+        setTotalMovement(totalMovementResult);
+        setCoinBalance(coinResult.balance);
+        setTodayCoins(todayCoinsResult.earned_today);
+      } catch (error) {
+        console.error("ダッシュボードデータ取得に失敗しました", error);
+      }
+    }
+
+    refreshDashboardData();
+  }, [isDashboardOpen]);
 
   const isFirstMount = useRef(true);
   useFocusEffect(
@@ -665,7 +697,9 @@ export default function HomeScreen() {
                 onPress={() => setIsDashboardOpen(false)}
               />
               <DashboardPassport
+                todayMovement={todayMovement}
                 totalMovement={totalMovement}
+                todayCoins={todayCoins}
                 onLogout={handleLogout}
                 onEditProfile={() => router.push("/(tabs)/profile/edit")}
                 avatarUrl={profile?.avatar_url}

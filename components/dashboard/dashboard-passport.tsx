@@ -2,13 +2,15 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Image, Pressable, StyleSheet, View } from "react-native";
 import { useState } from "react";
 
-import { TotalMovementResponse } from "@/api/movements";
+import { TodayMovementResponse, TotalMovementResponse } from "@/api/movements";
 import { ThemedText } from "@/components/themed-text";
 import { GENDER_LABELS } from "@/constants/gender";
 import { AppColors } from "@/constants/theme";
 
 type DashboardPassportProps = {
+  todayMovement: TodayMovementResponse | null;
   totalMovement: TotalMovementResponse | null;
+  todayCoins: number | null;
   onLogout: () => void;
   onEditProfile?: () => void;
   avatarUrl?: string | null;
@@ -17,13 +19,17 @@ type DashboardPassportProps = {
 };
 
 export function DashboardPassport({
+  todayMovement,
   totalMovement,
+  todayCoins,
   onLogout,
   onEditProfile,
   avatarUrl,
   name,
   gender,
 }: DashboardPassportProps) {
+  const todayDistanceKm =
+    todayMovement?.real_distance_km.toLocaleString() ?? "-";
   const totalDistanceKm =
     totalMovement?.total_real_distance_km.toLocaleString() ?? "-";
   const [avatarError, setAvatarError] = useState(false);
@@ -42,11 +48,11 @@ export function DashboardPassport({
         <ThemedText style={styles.dashboardSmallText}>
           ＜今日の移動記録＞
         </ThemedText>
-        <ThemedText style={styles.dashboardDistanceText}>1,250 km</ThemedText>
+        <ThemedText style={styles.dashboardDistanceText}>{todayDistanceKm} km</ThemedText>
         <ThemedText style={styles.dashboardSmallText}>
           ＜今日の獲得コイン数＞
         </ThemedText>
-        <ThemedText style={styles.dashboardCoinText}>40 C</ThemedText>
+        <ThemedText style={styles.dashboardCoinText}>{todayCoins ?? "-"} C</ThemedText>
 
         <View style={styles.passportInfoArea}>
           <View style={styles.passportCharacterArea}>

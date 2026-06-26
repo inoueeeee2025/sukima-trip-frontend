@@ -15,6 +15,7 @@ type WalkModeScreenProps = {
   longitude: number;
   locationName: string;
   remainingVirtualDistanceKm: number;
+  rollbackPosition: StreetViewPosition | null;
   onStatusChange: (status: StreetViewStatus) => void;
   onPositionChange: (position: StreetViewPosition) => void;
   onAddressChange: (address: string) => void;
@@ -26,6 +27,7 @@ export function WalkModeScreen({
   longitude,
   locationName,
   remainingVirtualDistanceKm,
+  rollbackPosition,
   onStatusChange,
   onPositionChange,
   onAddressChange,
@@ -37,6 +39,7 @@ export function WalkModeScreen({
       <StreetViewPanel
         latitude={latitude}
         longitude={longitude}
+        rollbackPosition={rollbackPosition}
         onStatusChange={onStatusChange}
         onPositionChange={onPositionChange}
         onAddressChange={onAddressChange}

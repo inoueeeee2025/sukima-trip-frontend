@@ -88,6 +88,8 @@ const INITIAL_WALK_SESSION: WalkSessionState = {
   lastLocation: null,
 };
 
+const VIRTUAL_DISTANCE_FINISH_THRESHOLD_KM = 0.5;
+
 function calculateDistanceKm(fromPoint: TripPoint, toPoint: TripPoint) {
   const earthRadiusKm = 6371;
   const toRadians = (degree: number) => (degree * Math.PI) / 180;
@@ -131,6 +133,9 @@ export default function HomeScreen() {
     useState<StreetViewStatus | null>(null);
   const [streetViewAddress, setStreetViewAddress] =
     useState<string>("現在地を取得中");
+  const [streetViewRollbackPosition, setStreetViewRollbackPosition] =
+    useState<StreetViewPosition | null>(null);
+  const [isWalkFinishedModalOpen, setIsWalkFinishedModalOpen] = useState(false);
   // Street Viewが見つからなかった時の文言を、Home(map)2上に出すために保持する
   const [streetViewUnavailableMessage, setStreetViewUnavailableMessage] =
     useState<string | null>(null);
@@ -152,9 +157,6 @@ export default function HomeScreen() {
 
   const hasSelectedLandingPoint = selectedLandingPoint !== null;
 
-  const displayedRealDistanceKm =
-    (todayMovement?.real_distance_km ?? 0) + walkSession.realDistanceKm;
-
   const availableVirtualDistanceKm =
     virtualTrip.totalVirtualDistanceKm + walkSession.realDistanceKm * 10;
 
@@ -163,8 +165,11 @@ export default function HomeScreen() {
     0,
   );
 
+  const displayedHeldRealDistanceKm = remainingVirtualDistanceKm / 10;
+
   const hasUsedAllVirtualDistance =
-    isWalkMode && remainingVirtualDistanceKm === 0;
+    isWalkMode &&
+    remainingVirtualDistanceKm <= VIRTUAL_DISTANCE_FINISH_THRESHOLD_KM;
 
   async function handleLogout() {
     await logoutUser();
@@ -227,6 +232,19 @@ export default function HomeScreen() {
 
     console.log("confirmLandingPoint", selectedLandingPoint);
 
+    if (remainingVirtualDistanceKm <= VIRTUAL_DISTANCE_FINISH_THRESHOLD_KM) {
+      setSelectedLandingPoint(null);
+      setPendingStreetViewPoint(null);
+
+      setTimeout(() => {
+        setStreetViewUnavailableMessage(
+          "移動できる距離がないため、この地点には降り立てません",
+        );
+      }, 100);
+
+      return;
+    }
+
     //選択された地点をTripPointとして作成
     const startPoint: TripPoint = {
       name: selectedLandingPoint.name,
@@ -247,6 +265,12 @@ export default function HomeScreen() {
   }
 
   function handleExitWalkMode() {
+    setIsWalkMode(false);
+    setIsExploreMode(true);
+  }
+
+  function handleCloseWalkFinishedModal() {
+    setIsWalkFinishedModalOpen(false);
     setIsWalkMode(false);
     setIsExploreMode(true);
   }
@@ -309,16 +333,47 @@ export default function HomeScreen() {
         nextPoint,
       );
 
+      const availableDistanceKm =
+        current.totalVirtualDistanceKm + walkSession.realDistanceKm * 10;
+
       const remainingDistanceKm = Math.max(
-        current.totalVirtualDistanceKm - current.usedVirtualDistanceKm,
+        availableDistanceKm - current.usedVirtualDistanceKm,
         0,
       );
 
-      const consumedDistanceKm = Math.min(movedDistanceKm, remainingDistanceKm);
-
       // 初期表示や同じ地点からの重複通知では距離を消費しない
-      if (consumedDistanceKm < 0.001) {
+      if (movedDistanceKm < 0.001) {
         return current;
+      }
+
+      if (remainingDistanceKm <= VIRTUAL_DISTANCE_FINISH_THRESHOLD_KM) {
+        setStreetViewRollbackPosition({
+          latitude: current.currentPoint.latitude,
+          longitude: current.currentPoint.longitude,
+        });
+        setIsWalkFinishedModalOpen(true);
+
+        return current;
+      }
+
+      if (movedDistanceKm > remainingDistanceKm) {
+        setStreetViewRollbackPosition({
+          latitude: current.currentPoint.latitude,
+          longitude: current.currentPoint.longitude,
+        });
+
+        return current;
+      }
+
+      const nextRemainingDistanceKm = remainingDistanceKm - movedDistanceKm;
+      const shouldFinishWalk =
+        nextRemainingDistanceKm <= VIRTUAL_DISTANCE_FINISH_THRESHOLD_KM;
+      const consumedDistanceKm = shouldFinishWalk
+        ? remainingDistanceKm
+        : movedDistanceKm;
+
+      if (shouldFinishWalk) {
+        setIsWalkFinishedModalOpen(true);
       }
 
       const movementLog: VirtualTripMovementLog = {
@@ -489,19 +544,44 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       {isWalkMode && virtualTrip.currentPoint ? (
-        <WalkModeScreen
-          latitude={virtualTrip.currentPoint.latitude}
-          longitude={virtualTrip.currentPoint.longitude}
-          locationName={streetViewAddress}
-          remainingVirtualDistanceKm={remainingVirtualDistanceKm}
-          onStatusChange={(status) => {
-            console.log("streetViewStatus", status);
-            setStreetViewStatus(status);
-          }}
-          onPositionChange={handleStreetViewPositionChange}
-          onAddressChange={setStreetViewAddress}
-          onExit={handleExitWalkMode}
-        />
+        <>
+          <WalkModeScreen
+            latitude={virtualTrip.currentPoint.latitude}
+            longitude={virtualTrip.currentPoint.longitude}
+            locationName={streetViewAddress}
+            remainingVirtualDistanceKm={remainingVirtualDistanceKm}
+            rollbackPosition={streetViewRollbackPosition}
+            onStatusChange={(status) => {
+              console.log("streetViewStatus", status);
+              setStreetViewStatus(status);
+            }}
+            onPositionChange={handleStreetViewPositionChange}
+            onAddressChange={setStreetViewAddress}
+            onExit={handleExitWalkMode}
+          />
+
+          {isWalkFinishedModalOpen || hasUsedAllVirtualDistance ? (
+            <View style={styles.walkFinishedOverlay}>
+              <View style={styles.walkFinishedCard}>
+                <ThemedText style={styles.walkFinishedTitle}>
+                  探索終了
+                </ThemedText>
+                <ThemedText style={styles.walkFinishedMessage}>
+                  移動できる距離を使い切りました
+                </ThemedText>
+
+                <Pressable
+                  style={styles.walkFinishedButton}
+                  onPress={handleCloseWalkFinishedModal}
+                >
+                  <ThemedText style={styles.walkFinishedButtonText}>
+                    ホームに戻る
+                  </ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
+        </>
       ) : (
         <View style={styles.mapArea}>
           {isExploreMode ? (
@@ -590,7 +670,7 @@ export default function HomeScreen() {
               <ThemedText style={styles.distanceText}>...</ThemedText>
             ) : (
               <ThemedText style={styles.distanceText}>
-                {displayedRealDistanceKm.toFixed(1)}
+                {displayedHeldRealDistanceKm.toFixed(1)}
               </ThemedText>
             )}
 
@@ -993,6 +1073,47 @@ const styles = StyleSheet.create({
     width: 50,
     height: 80,
     resizeMode: "contain",
+  },
+  walkFinishedOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
+  },
+  walkFinishedCard: {
+    width: "78%",
+    paddingHorizontal: 22,
+    paddingVertical: 20,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    alignItems: "center",
+  },
+  walkFinishedTitle: {
+    color: "#9e171a",
+    fontSize: 22,
+    fontWeight: "800",
+  },
+  walkFinishedMessage: {
+    marginTop: 10,
+    color: "#333333",
+    fontSize: 15,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  walkFinishedButton: {
+    marginTop: 18,
+    minWidth: 128,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 999,
+    backgroundColor: "#9e171a",
+    alignItems: "center",
+  },
+  walkFinishedButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "800",
   },
   dashboardOverlay: {
     ...StyleSheet.absoluteFillObject,

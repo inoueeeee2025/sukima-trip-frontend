@@ -14,7 +14,7 @@ import { ThemedText } from "@/components/themed-text";
 const signboardImage = require("@/assets/images/walk-mode/signboard.png");
 const arrowImage = require("@/assets/images/walk-mode/arrow.png");
 
-const ARRIVAL_THRESHOLD_KM = 0.2;
+const ARRIVAL_THRESHOLD_KM = 0.05;
 
 type WalkModeScreenProps = {
   latitude: number;

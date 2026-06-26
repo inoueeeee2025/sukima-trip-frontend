@@ -44,7 +44,7 @@ export async function apiRequest<T>(
   }
 
   if (!response.ok) {
-    throw new Error(data?.error ?? "通信エラーが発生しました");
+    throw new Error(data?.error ?? `通信エラーが発生しました (${response.status})`);
   }
 
   return data as T;

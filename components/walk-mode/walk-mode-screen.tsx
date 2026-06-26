@@ -1,6 +1,8 @@
-import { useState } from "react";
-import { ImageBackground, Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Image, ImageBackground, Pressable, StyleSheet, View } from "react-native";
 
+import { getNearestSpot, type NearestSpotResponse } from "@/api/spots";
+import { getAccessToken } from "@/components/auth/auth-storage";
 import {
   StreetViewPanel,
   type StreetViewPosition,
@@ -9,6 +11,7 @@ import {
 import { ThemedText } from "@/components/themed-text";
 
 const signboardImage = require("@/assets/images/walk-mode/signboard.png");
+const arrowImage = require("@/assets/images/walk-mode/arrow.png");
 
 type WalkModeScreenProps = {
   latitude: number;
@@ -31,14 +34,43 @@ export function WalkModeScreen({
   onAddressChange,
   onExit,
 }: WalkModeScreenProps) {
-  const [isNearestSpotCardOpen, setIsNearestSpotCardOpen] = useState(true);
+  const [isNearestSpotCardOpen, setIsNearestSpotCardOpen] = useState(false);
+  const [nearestSpot, setNearestSpot] = useState<NearestSpotResponse | null>(null);
+  const [streetViewHeading, setStreetViewHeading] = useState(0);
+  const lastFetchTimeRef = useRef<number>(0);
+
+  async function fetchNearestSpot(lat: number, lng: number) {
+    const now = Date.now();
+    if (now - lastFetchTimeRef.current < 3000) return;
+    lastFetchTimeRef.current = now;
+
+    const token = await getAccessToken();
+    if (!token) return;
+
+    try {
+      const result = await getNearestSpot(lat, lng, token);
+      setNearestSpot(result);
+    } catch {
+      // 取得失敗時は前回の値を維持
+    }
+  }
+
+  // ウォーク開始時に初回取得
+  useEffect(() => {
+    fetchNearestSpot(latitude, longitude);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <View style={styles.container}>
       <StreetViewPanel
         latitude={latitude}
         longitude={longitude}
         onStatusChange={onStatusChange}
-        onPositionChange={onPositionChange}
+        onPositionChange={(position) => {
+          fetchNearestSpot(position.latitude, position.longitude);
+          onPositionChange(position);
+        }}
+        onHeadingChange={setStreetViewHeading}
         onAddressChange={onAddressChange}
       />
 
@@ -63,8 +95,22 @@ export function WalkModeScreen({
           onPress={() => {
             setIsNearestSpotCardOpen((current) => !current);
           }}
+          accessibilityRole="button"
+          accessibilityLabel="最短スポットの方向"
         >
-          <ThemedText style={styles.directionArrow}>↑</ThemedText>
+          <Image
+            source={arrowImage}
+            style={[
+              styles.directionArrow,
+              {
+                transform: [
+                  {
+                    rotate: `${((nearestSpot?.bearing ?? 0) - streetViewHeading + 360) % 360}deg`,
+                  },
+                ],
+              },
+            ]}
+          />
         </Pressable>
 
         <Pressable style={styles.closeButton} onPress={onExit}>
@@ -78,9 +124,13 @@ export function WalkModeScreen({
             最短スポット案内
           </ThemedText>
           <ThemedText style={styles.nearestSpotName}>
-            エッフェル塔まで
+            {nearestSpot ? `${nearestSpot.name}まで` : "取得中..."}
           </ThemedText>
-          <ThemedText style={styles.nearestSpotDistance}>約 200 km</ThemedText>
+          {nearestSpot ? (
+            <ThemedText style={styles.nearestSpotDistance}>
+              約 {nearestSpot.distance_km.toFixed(1)} km
+            </ThemedText>
+          ) : null}
         </View>
       ) : null}
 
@@ -117,10 +167,9 @@ const styles = StyleSheet.create({
     marginLeft: 20,
   },
   directionArrow: {
-    color: "#FFFFFF",
-    fontSize: 64,
-    lineHeight: 68,
-    fontWeight: "300",
+    width: 44,
+    height: 44,
+    resizeMode: "contain",
   },
   remainingSignWrapper: {
     position: "absolute",

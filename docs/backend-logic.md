@@ -136,15 +136,14 @@ remaining_distance_km
 
 Phase 2まで実装して使い勝手を確認してから、方位センサーを使うPhase 3へ進む方法も候補とする。
 
-#### バックエンド変更案（未実装）
-
-専用エンドポイントを追加する場合の候補：
+#### バックエンド実装済み
 
 ```text
 GET /api/spots/nearest?lat=35.0&lng=135.0
+Authorization: Bearer {access_token}
 ```
 
-レスポンス例：
+レスポンス：
 
 ```json
 {
@@ -155,9 +154,11 @@ GET /api/spots/nearest?lat=35.0&lng=135.0
 }
 ```
 
-別案として、既存の`GET /api/spots`へ`bearing`を追加するか、Spot座標を使ってfrontend側で方位角を計算する方法もある。
+`bearing`は北を0度、東を90度とする0〜360度の値。frontendではStreet Viewの`pov_changed`で取得したカメラヘディングを引いて相対角度に変換し、矢印を回転させる。
 
-`bearing`は北を0度、東を90度とする0〜360度の値として扱う。
+```text
+relativeAngle = (bearing - streetViewHeading + 360) % 360
+```
 
 ### 到着判定
 
@@ -397,8 +398,6 @@ sukima-trip-backend/
 
 - `POST /api/movements/today`の正確なリクエスト・レスポンス型を追記する。
 - Spot一覧・詳細・到着APIの正確なレスポンス型を追記する。
-- 最近Spot UIの採用案と`bearing`の計算場所を決定する。
-- `GET /api/spots/nearest`を追加するか、既存のSpot一覧を利用するか決定する。
 - `visited_places`をWorld Mapへ表示する時の座標取得方法を確認する。
 - Wikipedia取得が`POST /api/spots/:id/arrive`のレスポンスに含まれることを最終確認する。
 - バックエンドの参照コミットIDを記録する。

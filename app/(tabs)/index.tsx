@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import * as Location from "expo-location";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -74,18 +75,23 @@ type VirtualTripState = {
   movementLog: VirtualTripMovementLog[];
 };
 
+type WalkSessionLocation = {
+  latitude: number;
+  longitude: number;
+};
+
 type WalkSessionState = {
   isActive: boolean;
   startedAt: string | null;
   realDistanceKm: number;
-  virtualDistanceKm: number;
+  lastLocation: WalkSessionLocation | null;
 };
 
 const INITIAL_WALK_SESSION: WalkSessionState = {
   isActive: false,
   startedAt: null,
   realDistanceKm: 0,
-  virtualDistanceKm: 0,
+  lastLocation: null,
 };
 
 function calculateDistanceKm(fromPoint: TripPoint, toPoint: TripPoint) {
@@ -241,6 +247,56 @@ export default function HomeScreen() {
     setIsWalkMode(false);
     setIsExploreMode(true);
   }
+
+  function handleWalkLocationChange(location: WalkSessionLocation) {
+    setWalkSession((current) => {
+      if (!current.isActive) {
+        return current;
+      }
+
+      if (!current.lastLocation) {
+        return {
+          ...current,
+          lastLocation: location,
+        };
+      }
+
+      const movedDistanceKm = calculateDistanceKm(
+        {
+          name: "前回の現在地",
+          latitude: current.lastLocation.latitude,
+          longitude: current.lastLocation.longitude,
+        },
+        {
+          name: "現在地",
+          latitude: location.latitude,
+          longitude: location.longitude,
+        },
+      );
+
+      if (movedDistanceKm < 0.005) {
+        return {
+          ...current,
+          lastLocation: location,
+        };
+      }
+
+      return {
+        ...current,
+        realDistanceKm: current.realDistanceKm + movedDistanceKm,
+        lastLocation: location,
+      };
+    });
+  }
+
+  function handleStartWalkSession() {
+    setWalkSession({
+      ...INITIAL_WALK_SESSION,
+      isActive: true,
+      startedAt: new Date().toISOString(),
+    });
+  }
+
   function handleStreetViewPositionChange(position: StreetViewPosition) {
     setVirtualTrip((current) => {
       if (!current.currentPoint) {
@@ -287,6 +343,42 @@ export default function HomeScreen() {
       };
     });
   }
+
+  useEffect(() => {
+    if (!walkSession.isActive) {
+      return;
+    }
+
+    let subscription: Location.LocationSubscription | null = null;
+
+    async function watchLocation() {
+      const permission = await Location.requestForegroundPermissionsAsync();
+
+      if (permission.status !== "granted") {
+        setWalkSession(INITIAL_WALK_SESSION);
+        return;
+      }
+
+      subscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.Balanced,
+          distanceInterval: 5,
+        },
+        (location) => {
+          handleWalkLocationChange({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          });
+        },
+      );
+    }
+
+    watchLocation();
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [walkSession.isActive]);
 
   useEffect(() => {
     async function loadHomeData() {

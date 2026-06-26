@@ -333,15 +333,14 @@ export default function HomeScreen() {
 
   async function handleConfirmExitWalkMode() {
     setIsWalkExitConfirmOpen(false);
+    setIsWalkMode(false);
+    setIsExploreMode(true);
 
     try {
       await saveWalkSessionMovement();
     } catch (error) {
       console.warn("探索終了時の距離保存に失敗しました", error);
     }
-
-    setIsWalkMode(false);
-    setIsExploreMode(true);
   }
 
   function handleCancelExitWalkMode() {
@@ -350,15 +349,14 @@ export default function HomeScreen() {
 
   async function handleCloseWalkFinishedModal() {
     setIsWalkFinishedModalOpen(false);
+    setIsWalkMode(false);
+    setIsExploreMode(true);
 
     try {
       await saveWalkSessionMovement();
     } catch (error) {
       console.warn("探索終了時の距離保存に失敗しました", error);
     }
-
-    setIsWalkMode(false);
-    setIsExploreMode(true);
   }
 
   function handleWalkLocationChange(location: WalkSessionLocation) {

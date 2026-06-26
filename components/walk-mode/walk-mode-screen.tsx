@@ -186,7 +186,7 @@ export function WalkModeScreen({
           placeId={discoveredSpot.placeId}
           coinEarned={discoveredSpot.coin_earned}
           photoUrl={discoveredSpot.photo_url}
-          wikiSummary={discoveredSpot.wiki_summary}
+          wikiSummary={discoveredSpot.description}
           onContinue={() => setDiscoveredSpot(null)}
           onExit={onExit}
         />

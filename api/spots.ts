@@ -23,7 +23,7 @@ export type ArriveResponse = {
   message: string;
   coin_earned: number;
   balance: number;
-  wiki_summary: string;
+  description: string;
   photo_url: string;
 };
 

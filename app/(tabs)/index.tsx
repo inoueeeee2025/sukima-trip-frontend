@@ -13,6 +13,7 @@ import { getCoinBalance } from "@/api/coins";
 import {
   getTodayMovements,
   getTotalMovements,
+  TodayMovementResponse,
   TotalMovementResponse,
 } from "@/api/movements";
 import { getProfile, ProfileResponse } from "@/api/profile";
@@ -97,6 +98,8 @@ export default function HomeScreen() {
   const { logoutUser } = useAuth();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [todayMovement, setTodayMovement] =
+    useState<TodayMovementResponse | null>(null);
   const [totalMovement, setTotalMovement] =
     useState<TotalMovementResponse | null>(null);
   const [isMovementLoading, setIsMovementLoading] = useState(true);
@@ -258,6 +261,7 @@ export default function HomeScreen() {
 
         if (!token) {
           setProfile(null);
+          setTodayMovement(null);
           setTotalMovement(null);
           setCoinBalance(null);
           return;
@@ -273,6 +277,7 @@ export default function HomeScreen() {
           ]);
 
         setProfile(profileResult);
+        setTodayMovement(movementResult);
         setTotalMovement(totalMovementResult);
         setCoinBalance(coinResult.balance);
 
@@ -287,6 +292,7 @@ export default function HomeScreen() {
       } catch (error) {
         console.error("ホームデータ取得に失敗しました", error);
         setProfile(null);
+        setTodayMovement(null);
         setTotalMovement(null);
         setCoinBalance(null);
       } finally {
@@ -520,7 +526,9 @@ export default function HomeScreen() {
                 onPress={() => setIsDashboardOpen(false)}
               />
               <DashboardPassport
+                todayMovement={todayMovement}
                 totalMovement={totalMovement}
+                coinBalance={coinBalance}
                 onLogout={handleLogout}
                 onEditProfile={() => router.push("/(tabs)/profile/edit")}
                 avatarUrl={profile?.avatar_url}

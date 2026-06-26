@@ -38,7 +38,6 @@ export function WalkModeScreen({
   const [nearestSpot, setNearestSpot] = useState<NearestSpotResponse | null>(null);
   const [streetViewHeading, setStreetViewHeading] = useState(0);
   const lastFetchTimeRef = useRef<number>(0);
-  const latestPositionRef = useRef<{ lat: number; lng: number }>({ lat: latitude, lng: longitude });
 
   async function fetchNearestSpot(lat: number, lng: number) {
     const now = Date.now();
@@ -46,17 +45,13 @@ export function WalkModeScreen({
     lastFetchTimeRef.current = now;
 
     const token = await getAccessToken();
-    if (!token) {
-      console.log("[NearestSpot] トークンなし");
-      return;
-    }
+    if (!token) return;
 
     try {
       const result = await getNearestSpot(lat, lng, token);
-      console.log("[NearestSpot] 取得成功:", result);
       setNearestSpot(result);
-    } catch (e) {
-      console.log("[NearestSpot] 取得失敗:", e);
+    } catch {
+      // 取得失敗時は前回の値を維持
     }
   }
 
@@ -72,7 +67,6 @@ export function WalkModeScreen({
         longitude={longitude}
         onStatusChange={onStatusChange}
         onPositionChange={(position) => {
-          latestPositionRef.current = { lat: position.latitude, lng: position.longitude };
           fetchNearestSpot(position.latitude, position.longitude);
           onPositionChange(position);
         }}

@@ -1,6 +1,8 @@
-import { useState } from "react";
-import { ImageBackground, Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Image, ImageBackground, Pressable, StyleSheet, View } from "react-native";
 
+import { getNearestSpot, type NearestSpotResponse } from "@/api/spots";
+import { getAccessToken } from "@/components/auth/auth-storage";
 import {
   StreetViewPanel,
   type StreetViewPosition,
@@ -9,6 +11,7 @@ import {
 import { ThemedText } from "@/components/themed-text";
 
 const signboardImage = require("@/assets/images/walk-mode/signboard.png");
+const arrowImage = require("@/assets/images/walk-mode/arrow.png");
 
 type WalkModeScreenProps = {
   latitude: number;
@@ -32,6 +35,33 @@ export function WalkModeScreen({
   onExit,
 }: WalkModeScreenProps) {
   const [isNearestSpotCardOpen, setIsNearestSpotCardOpen] = useState(true);
+  const [nearestSpot, setNearestSpot] = useState<NearestSpotResponse | null>(null);
+  const lastFetchPositionRef = useRef<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    async function fetchNearestSpot() {
+      const last = lastFetchPositionRef.current;
+      if (last) {
+        const dlat = (latitude - last.lat) * 111;
+        const dlng = (longitude - last.lng) * 111 * Math.cos((latitude * Math.PI) / 180);
+        const movedKm = Math.sqrt(dlat * dlat + dlng * dlng);
+        if (movedKm < 0.5) return;
+      }
+
+      const token = await getAccessToken();
+      if (!token) return;
+
+      try {
+        const result = await getNearestSpot(latitude, longitude, token);
+        setNearestSpot(result);
+        lastFetchPositionRef.current = { lat: latitude, lng: longitude };
+      } catch {
+        // 取得失敗時は前回の値を維持
+      }
+    }
+
+    fetchNearestSpot();
+  }, [latitude, longitude]);
   return (
     <View style={styles.container}>
       <StreetViewPanel
@@ -64,7 +94,13 @@ export function WalkModeScreen({
             setIsNearestSpotCardOpen((current) => !current);
           }}
         >
-          <ThemedText style={styles.directionArrow}>↑</ThemedText>
+          <Image
+            source={arrowImage}
+            style={[
+              styles.directionArrow,
+              { transform: [{ rotate: `${nearestSpot?.bearing ?? 0}deg` }] },
+            ]}
+          />
         </Pressable>
 
         <Pressable style={styles.closeButton} onPress={onExit}>
@@ -78,9 +114,13 @@ export function WalkModeScreen({
             最短スポット案内
           </ThemedText>
           <ThemedText style={styles.nearestSpotName}>
-            エッフェル塔まで
+            {nearestSpot ? `${nearestSpot.name}まで` : "取得中..."}
           </ThemedText>
-          <ThemedText style={styles.nearestSpotDistance}>約 200 km</ThemedText>
+          {nearestSpot ? (
+            <ThemedText style={styles.nearestSpotDistance}>
+              約 {nearestSpot.distance_km.toFixed(1)} km
+            </ThemedText>
+          ) : null}
         </View>
       ) : null}
 
@@ -117,10 +157,9 @@ const styles = StyleSheet.create({
     marginLeft: 20,
   },
   directionArrow: {
-    color: "#FFFFFF",
-    fontSize: 64,
-    lineHeight: 68,
-    fontWeight: "300",
+    width: 44,
+    height: 44,
+    resizeMode: "contain",
   },
   remainingSignWrapper: {
     position: "absolute",

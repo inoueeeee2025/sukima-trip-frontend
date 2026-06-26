@@ -165,10 +165,7 @@ export default function FavoriteSpotsScreen() {
                     style={styles.heartButton}
                     onPress={() => handleToggleLike(item)}
                   >
-                    <Image
-                      source={require("@/assets/images/spots/like-icon.png")}
-                      style={styles.heartIcon}
-                    />
+                    <Text style={styles.heartIcon}>♥</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -315,14 +312,13 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#e74c3c",
     alignItems: "center",
     justifyContent: "center",
   },
   heartIcon: {
-    width: 20,
-    height: 20,
-    resizeMode: "contain",
+    fontSize: 18,
+    color: "#ffffff",
   },
   coinBadge: {
     position: "absolute",

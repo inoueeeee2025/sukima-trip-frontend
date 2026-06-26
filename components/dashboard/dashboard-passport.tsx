@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   },
   dashboardContent: {
     width: "78%",
-    minHeight: 260,
+    minHeight: 220,
     paddingTop: 40,
     gap: 12,
     zIndex: 1,
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   passportInfoArea: {
-    marginTop: 48,
+    marginTop: 28,
     width: "100%",
     flexDirection: "row",
     alignItems: "center",
@@ -237,8 +237,8 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSerifJP",
   },
   profileEditButton: {
-    width: "46%",
-    paddingVertical: 6,
+    width: "40%",
+    paddingVertical: 5,
     borderRadius: 8,
     borderWidth: 1.5,
     borderColor: "#9e171a",
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   },
   profileEditText: {
     color: "#111111",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
     fontFamily: "NotoSerifJP",
   },

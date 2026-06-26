@@ -166,11 +166,11 @@ Spot到着までの処理フローは次のとおり。
 
 1. frontendが`GET /api/spots`で周辺Spot一覧を取得し、画面側で保持する。
 2. Street View移動中に、frontendが現在地とSpotの距離をローカルで確認する。
-3. 100m以内に入ったら`POST /api/spots/:id/arrive`を送信する。
+3. 200m以内に入ったら`POST /api/spots/:id/arrive`を送信する。
 4. バックエンドがGoogle Places Details APIからSpotの実座標を取得する。
 5. frontendから送信された座標とSpot座標の距離をバックエンドで再計算する。
-6. 100mを超えている場合は`400 Bad Request`を返す。
-7. 100m以内の場合は訪問地保存、コイン付与、Wikipedia情報取得を行う。
+6. 200mを超えている場合は`400 Bad Request`を返す。
+7. 200m以内の場合は訪問地保存、コイン付与、Wikipedia情報取得を行う。
 8. コイン残高、Wikipedia概要、画像URLをレスポンスとして返す。
 
 到着判定は、不正な座標によるコイン取得を防ぐためバックエンド側で行う。

@@ -156,6 +156,9 @@ export default function HomeScreen() {
 
   const hasSelectedLandingPoint = selectedLandingPoint !== null;
 
+  const displayedRealDistanceKm =
+    (todayMovement?.real_distance_km ?? 0) + walkSession.realDistanceKm;
+
   const remainingVirtualDistanceKm = Math.max(
     virtualTrip.totalVirtualDistanceKm - virtualTrip.usedVirtualDistanceKm,
     0,
@@ -413,8 +416,6 @@ export default function HomeScreen() {
           totalVirtualDistanceKm: movementResult.virtual_distance_km,
           usedVirtualDistanceKm: movementResult.used_virtual_distance_km,
         }));
-
-      
       } catch (error) {
         console.error("ホームデータ取得に失敗しました", error);
         setProfile(null);
@@ -571,7 +572,7 @@ export default function HomeScreen() {
               <ThemedText style={styles.distanceText}>...</ThemedText>
             ) : (
               <ThemedText style={styles.distanceText}>
-                {todayMovement?.real_distance_km ?? 0}
+                {displayedRealDistanceKm.toFixed(1)}
               </ThemedText>
             )}
 
@@ -587,7 +588,7 @@ export default function HomeScreen() {
               style={styles.coinIconImage}
             />
             <ThemedText style={styles.coinText}>
-              {isMovementLoading ? "..." : coinBalance ?? "-"}
+              {isMovementLoading ? "..." : (coinBalance ?? "-")}
             </ThemedText>
           </View>
           {isExploreMode ? (

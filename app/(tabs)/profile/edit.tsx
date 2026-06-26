@@ -33,7 +33,11 @@ export default function ProfileEditScreen() {
   useEffect(() => {
     (async () => {
       const token = await getAccessToken();
-      if (!token) return;
+      if (!token) {
+        setErrorMessage("ログインが必要です");
+        setIsLoading(false);
+        return;
+      }
       try {
         const profile = await getProfile(token);
         setName(profile.name ?? "");

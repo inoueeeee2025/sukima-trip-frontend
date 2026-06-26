@@ -320,8 +320,13 @@ export default function HomeScreen() {
     loadHomeData();
   }, []); //ホーム画面が開いた時にプロフィール取得が走る、tokenを読んで/profileを叩く、結果をprofile　stateに入れる
 
+  const isFirstMount = useRef(true);
   useFocusEffect(
     useCallback(() => {
+      if (isFirstMount.current) {
+        isFirstMount.current = false;
+        return;
+      }
       async function refreshProfile() {
         const token = await getAccessToken();
         if (!token) return;

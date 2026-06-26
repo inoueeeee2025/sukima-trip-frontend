@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   passportInfoArea: {
-    marginTop: 48,
+    marginTop: 28,
     width: "100%",
     flexDirection: "row",
     alignItems: "center",
@@ -237,10 +237,10 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSerifJP",
   },
   profileEditButton: {
-    width: "56%",
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 2,
+    width: "46%",
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1.5,
     borderColor: "#9e171a",
     backgroundColor: "#fff4c9",
     alignItems: "center",
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   },
   profileEditText: {
     color: "#111111",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "700",
     fontFamily: "NotoSerifJP",
   },

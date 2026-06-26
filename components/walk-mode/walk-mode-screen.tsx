@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Image, ImageBackground, Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Image, ImageBackground, Pressable, StyleSheet, View } from "react-native";
 
 import { arriveAtSpot, getNearestSpot, type ArriveResponse, type NearestSpotResponse } from "@/api/spots";
 import { getAccessToken } from "@/components/auth/auth-storage";
@@ -13,6 +13,8 @@ import { ThemedText } from "@/components/themed-text";
 
 const signboardImage = require("@/assets/images/walk-mode/signboard.png");
 const arrowImage = require("@/assets/images/walk-mode/arrow.png");
+
+const ARRIVAL_THRESHOLD_KM = 0.2;
 
 type WalkModeScreenProps = {
   latitude: number;
@@ -41,6 +43,7 @@ export function WalkModeScreen({
   const [discoveredSpot, setDiscoveredSpot] = useState<
     (ArriveResponse & { spotName: string; placeId: string }) | null
   >(null);
+  const [isArriving, setIsArriving] = useState(false);
   const lastFetchTimeRef = useRef<number>(0);
   const arrivedPlaceIdsRef = useRef<Set<string>>(new Set());
 
@@ -56,8 +59,9 @@ export function WalkModeScreen({
       const result = await getNearestSpot(lat, lng, token);
       setNearestSpot(result);
 
-      if (result.distance_km < 0.2 && !arrivedPlaceIdsRef.current.has(result.place_id)) {
+      if (result.distance_km < ARRIVAL_THRESHOLD_KM && !arrivedPlaceIdsRef.current.has(result.place_id)) {
         arrivedPlaceIdsRef.current.add(result.place_id);
+        setIsArriving(true);
         try {
           const arrived = await arriveAtSpot(
             result.place_id,
@@ -68,6 +72,8 @@ export function WalkModeScreen({
         } catch (arriveError) {
           console.error("[arriveAtSpot] failed:", arriveError);
           arrivedPlaceIdsRef.current.delete(result.place_id);
+        } finally {
+          setIsArriving(false);
         }
       }
     } catch {
@@ -159,6 +165,12 @@ export function WalkModeScreen({
       {!discoveredSpot && (
         <View style={styles.locationPill}>
           <ThemedText style={styles.locationText}>{locationName}</ThemedText>
+        </View>
+      )}
+
+      {isArriving && (
+        <View style={styles.arrivingIndicator}>
+          <ActivityIndicator size="large" color="#C8A820" />
         </View>
       )}
 
@@ -298,6 +310,16 @@ const styles = StyleSheet.create({
     fontSize: 23,
     fontWeight: "900",
     marginTop: 8,
+  },
+  arrivingIndicator: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
   },
   locationPill: {
     position: "absolute",

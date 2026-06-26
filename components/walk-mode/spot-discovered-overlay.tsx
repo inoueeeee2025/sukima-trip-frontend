@@ -95,7 +95,7 @@ export function SpotDiscoveredOverlay({
                 onPress={toggleLike}
                 disabled={isLiking}
                 accessibilityRole="button"
-                accessibilityLabel="お気に入りに追加"
+                accessibilityLabel={liked ? "お気に入りから削除" : "お気に入りに追加"}
               >
                 {isLiking ? (
                   <ActivityIndicator size="small" color={liked ? "#ffffff" : "#e74c3c"} />
@@ -109,7 +109,9 @@ export function SpotDiscoveredOverlay({
 
             <View style={styles.infoArea}>
               <ThemedText style={styles.infoTitle}>基本情報</ThemedText>
-              <ThemedText style={styles.infoText}>{wikiSummary}</ThemedText>
+              <ThemedText style={styles.infoText}>
+                {wikiSummary || "情報を取得できませんでした。"}
+              </ThemedText>
             </View>
           </View>
 

@@ -117,17 +117,17 @@ export function SpotDiscoveredOverlay({
             <ThemedText style={styles.coinBadgeText}>{coinEarned}</ThemedText>
           </View>
         </View>
-      </ScrollView>
 
-      {/* ボタンエリア */}
-      <View style={styles.buttonRow}>
-        <Pressable style={styles.exitButton} onPress={onExit}>
-          <ThemedText style={styles.exitButtonText}>終了する</ThemedText>
-        </Pressable>
-        <Pressable style={styles.continueButton} onPress={onContinue}>
-          <ThemedText style={styles.continueButtonText}>続ける</ThemedText>
-        </Pressable>
-      </View>
+        {/* ボタンエリア（カード直下） */}
+        <View style={styles.buttonRow}>
+          <Pressable style={styles.exitButton} onPress={onExit}>
+            <ThemedText style={styles.exitButtonText}>終了する</ThemedText>
+          </Pressable>
+          <Pressable style={styles.continueButton} onPress={onContinue}>
+            <ThemedText style={styles.continueButtonText}>続ける</ThemedText>
+          </Pressable>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -254,9 +254,9 @@ const styles = StyleSheet.create({
   buttonRow: {
     flexDirection: "row",
     gap: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: "transparent",
+    width: CARD_WIDTH,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   exitButton: {
     flex: 1,

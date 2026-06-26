@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Image, ImageBackground, Pressable, StyleSheet, View } from "react-native";
+import * as Location from "expo-location";
 
 import { getNearestSpot, type NearestSpotResponse } from "@/api/spots";
 import { getAccessToken } from "@/components/auth/auth-storage";
@@ -36,8 +37,23 @@ export function WalkModeScreen({
 }: WalkModeScreenProps) {
   const [isNearestSpotCardOpen, setIsNearestSpotCardOpen] = useState(true);
   const [nearestSpot, setNearestSpot] = useState<NearestSpotResponse | null>(null);
+  const [deviceHeading, setDeviceHeading] = useState(0);
   const lastFetchTimeRef = useRef<number>(0);
   const latestPositionRef = useRef<{ lat: number; lng: number }>({ lat: latitude, lng: longitude });
+
+  useEffect(() => {
+    let subscription: Location.LocationSubscription | null = null;
+
+    async function startHeadingWatch() {
+      subscription = await Location.watchHeadingAsync((heading) => {
+        const h = heading.trueHeading >= 0 ? heading.trueHeading : heading.magHeading;
+        setDeviceHeading(h);
+      });
+    }
+
+    startHeadingWatch();
+    return () => { subscription?.remove(); };
+  }, []);
 
   async function fetchNearestSpot(lat: number, lng: number) {
     const now = Date.now();
@@ -45,13 +61,17 @@ export function WalkModeScreen({
     lastFetchTimeRef.current = now;
 
     const token = await getAccessToken();
-    if (!token) return;
+    if (!token) {
+      console.log("[NearestSpot] トークンなし");
+      return;
+    }
 
     try {
       const result = await getNearestSpot(lat, lng, token);
+      console.log("[NearestSpot] 取得成功:", result);
       setNearestSpot(result);
-    } catch {
-      // 取得失敗時は前回の値を維持
+    } catch (e) {
+      console.log("[NearestSpot] 取得失敗:", e);
     }
   }
 
@@ -100,7 +120,13 @@ export function WalkModeScreen({
             source={arrowImage}
             style={[
               styles.directionArrow,
-              { transform: [{ rotate: `${nearestSpot?.bearing ?? 0}deg` }] },
+              {
+                transform: [
+                  {
+                    rotate: `${((nearestSpot?.bearing ?? 0) - deviceHeading + 360) % 360}deg`,
+                  },
+                ],
+              },
             ]}
           />
         </Pressable>

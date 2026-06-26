@@ -2,18 +2,12 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { login, register } from "@/api/auth";
+import type { RegisterInput } from "@/api/auth";
 import {
   getAccessToken,
   removeAccessToken,
   saveAccessToken,
 } from "@/components/auth/auth-storage";
-
-type RegisterInput = {
-  email: string;
-  password: string;
-  name: string;
-  gender?: string;
-};
 
 type AuthContextValue = {
   isLoggedIn: boolean;

@@ -35,7 +35,6 @@ export default function LoginScreen() {
 
     try {
       await loginUser(email, password);
-      router.replace("/(tabs)");
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "ログインに失敗しました"

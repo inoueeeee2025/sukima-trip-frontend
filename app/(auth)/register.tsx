@@ -76,7 +76,6 @@ export default function RegisterScreen() {
           );
         });
       }
-      router.replace("/(tabs)");
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "新規登録に失敗しました"

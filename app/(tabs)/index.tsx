@@ -324,7 +324,11 @@ export default function HomeScreen() {
       movementLog: [],
     }));
 
-    setWalkSession(INITIAL_WALK_SESSION);
+    setWalkSession({
+      ...INITIAL_WALK_SESSION,
+      isActive: true,
+      startedAt: new Date().toISOString(),
+    });
   }
 
   async function handleConfirmExitWalkMode() {
@@ -547,14 +551,19 @@ export default function HomeScreen() {
         }
 
         // 独立したAPIを並列取得
-        const [profileResult, movementResult, totalMovementResult, coinResult, todayCoinsResult] =
-          await Promise.all([
-            getProfile(token),
-            getTodayMovements(token),
-            getTotalMovements(token),
-            getCoinBalance(token),
-            getTodayCoins(token),
-          ]);
+        const [
+          profileResult,
+          movementResult,
+          totalMovementResult,
+          coinResult,
+          todayCoinsResult,
+        ] = await Promise.all([
+          getProfile(token),
+          getTodayMovements(token),
+          getTotalMovements(token),
+          getCoinBalance(token),
+          getTodayCoins(token),
+        ]);
 
         setProfile(profileResult);
         setTodayMovement(movementResult);
@@ -591,13 +600,17 @@ export default function HomeScreen() {
       const token = await getAccessToken();
       if (!token) return;
       try {
-        const [movementResult, totalMovementResult, coinResult, todayCoinsResult] =
-          await Promise.all([
-            getTodayMovements(token),
-            getTotalMovements(token),
-            getCoinBalance(token),
-            getTodayCoins(token),
-          ]);
+        const [
+          movementResult,
+          totalMovementResult,
+          coinResult,
+          todayCoinsResult,
+        ] = await Promise.all([
+          getTodayMovements(token),
+          getTotalMovements(token),
+          getCoinBalance(token),
+          getTodayCoins(token),
+        ]);
         setTodayMovement(movementResult);
         setTotalMovement(totalMovementResult);
         setCoinBalance(coinResult.balance);

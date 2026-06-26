@@ -1,7 +1,6 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Animated,
   Image,
   Pressable,
@@ -96,7 +95,7 @@ function calculateDistanceKm(fromPoint: TripPoint, toPoint: TripPoint) {
 }
 
 export default function HomeScreen() {
-  const { isLoggedIn, isCheckingAuth, logoutUser } = useAuth();
+  const { logoutUser } = useAuth();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [todayMovement, setTodayMovement] =
@@ -143,21 +142,6 @@ export default function HomeScreen() {
 
   async function handleLogout() {
     await logoutUser();
-    setIsDashboardOpen(false);
-    setIsExploreMode(false);
-    setIsWalkMode(false);
-    setSelectedLandingPoint(null);
-    setPendingStreetViewPoint(null);
-    setVirtualTrip({
-      startPoint: null,
-      currentPoint: null,
-      totalVirtualDistanceKm: 0,
-      usedVirtualDistanceKm: 0,
-      movementLog: [],
-    });
-    setProfile(null);
-    setTodayMovement(null);
-    setTotalMovement(null);
   }
 
   const DEFAULT_MAP_CENTER: TripPoint = {
@@ -364,21 +348,6 @@ export default function HomeScreen() {
       streetViewUnavailableOpacity.stopAnimation();
     };
   }, [streetViewUnavailableMessage, streetViewUnavailableOpacity]);
-
-  if (isCheckingAuth) {
-    return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.content}>
-          <ActivityIndicator size="large" color="#1f6f5f" />
-          <ThemedText>ログイン状態を確認中です...</ThemedText>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (!isLoggedIn) {
-    return null;
-  }
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>

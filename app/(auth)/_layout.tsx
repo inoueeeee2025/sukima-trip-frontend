@@ -5,7 +5,7 @@ import { useAuth } from "@/components/auth/use-auth";
 import { useFonts } from "expo-font";
 
 export default function AuthLayout() {
-  const { isLoggedIn, isCheckingAuth } = useAuth();
+  const { isLoggedIn, isCheckingAuth, isNewUser } = useAuth();
 
   if (isCheckingAuth) {
     return (
@@ -15,12 +15,10 @@ export default function AuthLayout() {
         </View>
       </SafeAreaView>
     );
-
-    
   }
 
   if (isLoggedIn) {
-    return <Redirect href="/(tabs)" />;
+    return <Redirect href={isNewUser ? "/product-tour" : "/(tabs)"} />;
   }
 
   return <Stack screenOptions={{ headerShown: false }} />;

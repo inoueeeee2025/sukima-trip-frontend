@@ -12,9 +12,11 @@ import {
 type AuthContextValue = {
   isLoggedIn: boolean;
   isCheckingAuth: boolean;
+  isNewUser: boolean;
   loginUser: (email: string, password: string) => Promise<{ access_token: string; user_id: string }>;
   registerUser: (input: RegisterInput) => Promise<{ access_token: string; user_id: string }>;
   logoutUser: () => Promise<void>;
+  clearNewUser: () => void;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -22,6 +24,7 @@ export const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
     async function loadAuthState() {
@@ -47,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function registerUser(input: RegisterInput) {
     const result = await register(input);
     await saveAccessToken(result.access_token);
+    setIsNewUser(true);
     setIsLoggedIn(true);
     return result;
   }
@@ -56,8 +60,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoggedIn(false);
   }
 
+  function clearNewUser() {
+    setIsNewUser(false);
+  }
+
   return (
-    <AuthContext.Provider value={{ isLoggedIn, isCheckingAuth, loginUser, registerUser, logoutUser }}>
+    <AuthContext.Provider value={{ isLoggedIn, isCheckingAuth, isNewUser, loginUser, registerUser, logoutUser, clearNewUser }}>
       {children}
     </AuthContext.Provider>
   );

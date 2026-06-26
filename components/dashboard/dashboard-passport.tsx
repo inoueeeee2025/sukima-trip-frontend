@@ -5,6 +5,7 @@ import { useState } from "react";
 import { TotalMovementResponse } from "@/api/movements";
 import { ThemedText } from "@/components/themed-text";
 import { GENDER_LABELS } from "@/constants/gender";
+import { AppColors } from "@/constants/theme";
 
 type DashboardPassportProps = {
   totalMovement: TotalMovementResponse | null;
@@ -102,8 +103,14 @@ export function DashboardPassport({
       </Pressable>
 
       {/* ログアウトボタン：パスポート右上に絶対配置（レイアウトに影響しない） */}
-      <Pressable style={styles.logoutButton} onPress={onLogout}>
-        <MaterialIcons name="exit-to-app" size={20} color="#9e171a" />
+      <Pressable
+        style={styles.logoutButton}
+        onPress={onLogout}
+        accessibilityRole="button"
+        accessibilityLabel="ログアウト"
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <MaterialIcons name="exit-to-app" size={20} color={AppColors.inputBorder} />
       </Pressable>
     </View>
   );
@@ -241,7 +248,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: "#9e171a",
+    borderColor: AppColors.inputBorder,
     backgroundColor: "#fff4c9",
     alignItems: "center",
     zIndex: 1,

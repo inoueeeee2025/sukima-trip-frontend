@@ -1,21 +1,21 @@
-import { router } from "expo-router";
+
+import { router, useFocusEffect } from "expo-router";
 import * as Location from "expo-location";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
 import {
-  ActivityIndicator,
   Animated,
   Image,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getCoinBalance } from "@/api/coins";
 import {
   getTodayMovements,
   getTotalMovements,
-  TodayMovementResponse,
   TotalMovementResponse,
 } from "@/api/movements";
 import { getProfile, ProfileResponse } from "@/api/profile";
@@ -116,11 +116,9 @@ function calculateDistanceKm(fromPoint: TripPoint, toPoint: TripPoint) {
 }
 
 export default function HomeScreen() {
-  const { isLoggedIn, isCheckingAuth, logoutUser } = useAuth();
+  const { logoutUser } = useAuth();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
-  const [todayMovement, setTodayMovement] =
-    useState<TodayMovementResponse | null>(null);
   const [totalMovement, setTotalMovement] =
     useState<TotalMovementResponse | null>(null);
   const [isMovementLoading, setIsMovementLoading] = useState(true);
@@ -406,7 +404,6 @@ export default function HomeScreen() {
 
         if (!token) {
           setProfile(null);
-          setTodayMovement(null);
           setTotalMovement(null);
           setCoinBalance(null);
           return;
@@ -422,7 +419,6 @@ export default function HomeScreen() {
           ]);
 
         setProfile(profileResult);
-        setTodayMovement(movementResult);
         setTotalMovement(totalMovementResult);
         setCoinBalance(coinResult.balance);
 
@@ -435,7 +431,6 @@ export default function HomeScreen() {
       } catch (error) {
         console.error("ホームデータ取得に失敗しました", error);
         setProfile(null);
-        setTodayMovement(null);
         setTotalMovement(null);
         setCoinBalance(null);
       } finally {
@@ -446,6 +441,27 @@ export default function HomeScreen() {
 
     loadHomeData();
   }, []); //ホーム画面が開いた時にプロフィール取得が走る、tokenを読んで/profileを叩く、結果をprofile　stateに入れる
+
+  const isFirstMount = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstMount.current) {
+        isFirstMount.current = false;
+        return;
+      }
+      async function refreshProfile() {
+        const token = await getAccessToken();
+        if (!token) return;
+        try {
+          const profileResult = await getProfile(token);
+          setProfile(profileResult);
+        } catch {
+          // ignore, keep existing profile data
+        }
+      }
+      refreshProfile();
+    }, [])
+  );
 
   useEffect(() => {
     if (!streetViewUnavailableMessage) {
@@ -471,23 +487,8 @@ export default function HomeScreen() {
     };
   }, [streetViewUnavailableMessage, streetViewUnavailableOpacity]);
 
-  if (isCheckingAuth) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.content}>
-          <ActivityIndicator size="large" color="#1f6f5f" />
-          <ThemedText>ログイン状態を確認中です...</ThemedText>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (!isLoggedIn) {
-    return null;
-  }
-
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       {isWalkMode && virtualTrip.currentPoint ? (
         <WalkModeScreen
           latitude={virtualTrip.currentPoint.latitude}
@@ -590,7 +591,7 @@ export default function HomeScreen() {
               <ThemedText style={styles.distanceText}>...</ThemedText>
             ) : (
               <ThemedText style={styles.distanceText}>
-                {displayedRealDistanceKm.toFixed(1)}
+                  {displayedRealDistanceKm.toFixed(1)}
               </ThemedText>
             )}
 
@@ -667,6 +668,7 @@ export default function HomeScreen() {
               <DashboardPassport
                 totalMovement={totalMovement}
                 onLogout={handleLogout}
+                onEditProfile={() => router.push("/(tabs)/profile/edit")}
                 avatarUrl={profile?.avatar_url}
                 name={profile?.name}
                 gender={profile?.gender}
@@ -772,10 +774,10 @@ const styles = StyleSheet.create({
   },
   distanceBadge: {
     position: "absolute",
-    top: 10,
+    top: 8,
     alignSelf: "center",
     width: 160,
-    height: 48,
+    height: 60,
     borderRadius: 20,
     borderWidth: 4,
     borderColor: "#9e171a",
@@ -786,6 +788,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   footprintIcon: {
+    position: "absolute",
+    left: 6,
     width: 32,
     height: 32,
     resizeMode: "contain",
@@ -794,8 +798,11 @@ const styles = StyleSheet.create({
     color: "#111111",
     fontSize: 28,
     fontWeight: "800",
+    lineHeight: 34,
   },
   distanceUnit: {
+    position: "absolute",
+    right: 8,
     color: "#111111",
     fontSize: 22,
     fontWeight: "700",

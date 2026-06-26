@@ -1,12 +1,16 @@
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Image, Pressable, StyleSheet, View } from "react-native";
 import { useState } from "react";
 
 import { TotalMovementResponse } from "@/api/movements";
 import { ThemedText } from "@/components/themed-text";
+import { GENDER_LABELS } from "@/constants/gender";
+import { AppColors } from "@/constants/theme";
 
 type DashboardPassportProps = {
   totalMovement: TotalMovementResponse | null;
   onLogout: () => void;
+  onEditProfile?: () => void;
   avatarUrl?: string | null;
   name?: string | null;
   gender?: string | null;
@@ -15,6 +19,7 @@ type DashboardPassportProps = {
 export function DashboardPassport({
   totalMovement,
   onLogout,
+  onEditProfile,
   avatarUrl,
   name,
   gender,
@@ -45,6 +50,8 @@ export function DashboardPassport({
 
         <View style={styles.passportInfoArea}>
           <View style={styles.passportCharacterArea}>
+            <ThemedText style={styles.passportLabel}>旅券</ThemedText>
+            <ThemedText style={styles.passportLabelEn}>PASSPORT</ThemedText>
             {avatarUrl && !avatarError ? (
               <View style={styles.passportAvatarWrap}>
                 <Image
@@ -79,7 +86,7 @@ export function DashboardPassport({
               </View>
               <View style={styles.profileField}>
                 <ThemedText style={styles.profileLabel}>性別</ThemedText>
-                <ThemedText style={styles.profileValue}>{gender || "未設定"}</ThemedText>
+                <ThemedText style={styles.profileValue}>{(gender && GENDER_LABELS[gender]) || gender || "未設定"}</ThemedText>
               </View>
             </View>
 
@@ -93,12 +100,19 @@ export function DashboardPassport({
         </View>
       </View>
 
-      <Pressable style={styles.profileEditButton}>
+      <Pressable style={styles.profileEditButton} onPress={onEditProfile}>
         <ThemedText style={styles.profileEditText}>プロフィール変更</ThemedText>
       </Pressable>
 
-      <Pressable style={styles.logoutButton} onPress={onLogout}>
-        <ThemedText style={styles.logoutText}>ログアウト</ThemedText>
+      {/* ログアウトボタン：パスポート右上に絶対配置（レイアウトに影響しない） */}
+      <Pressable
+        style={styles.logoutButton}
+        onPress={onLogout}
+        accessibilityRole="button"
+        accessibilityLabel="ログアウト"
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <MaterialIcons name="exit-to-app" size={20} color={AppColors.inputBorder} />
       </Pressable>
     </View>
   );
@@ -109,29 +123,31 @@ const styles = StyleSheet.create({
     width: "88%",
     maxWidth: 380,
     alignItems: "center",
-    gap: 12,
+    gap: 4,
+    paddingBottom: 55,
     zIndex: 1,
   },
   dashboardPassportImage: {
     position: "absolute",
     top: 0,
     width: "100%",
-    height: "100%",
+    height: 400,
     resizeMode: "contain",
+    transform: [{ translateY: -10 }],
   },
   dashboardContent: {
     width: "78%",
     minHeight: 260,
-    paddingTop: 40,
+    paddingTop: 20,
     gap: 12,
     zIndex: 1,
   },
   dashboardSectionTitle: {
     fontFamily: "NotoSerifJP",
     color: "#111111",
-    fontSize: 20,
-    top:10,
-    fontWeight: "500",
+    fontSize: 22,
+    top:4,
+    fontWeight: "700",
     textAlign: "center",
     textDecorationLine: "underline",
   },
@@ -145,7 +161,8 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSerifJP",
     color: "#111111",
     fontSize: 34,
-    fontWeight: "800",
+    lineHeight: 42,
+    fontWeight: "900",
     textAlign: "center",
   },
   dashboardCoinText: {
@@ -193,6 +210,26 @@ const styles = StyleSheet.create({
     height: 80,
     resizeMode: "cover",
   },
+  passportLabel: {
+    position: "absolute",
+    top: -40,
+    alignSelf: "center",
+    color: "#111111",
+    fontSize: 15,
+    fontWeight: "700",
+    fontFamily: "NotoSerifJP",
+    zIndex: 2,
+  },
+  passportLabelEn: {
+    position: "absolute",
+    top: -28,
+    alignSelf: "center",
+    color: "#111111",
+    fontSize: 15,
+    fontWeight: "600",
+    fontFamily: "NotoSerifJP",
+    zIndex: 2,
+  },
   passportFootprint: {
     position: "absolute",
     right: -8,
@@ -219,10 +256,12 @@ const styles = StyleSheet.create({
   profileLabel: {
     color: "#333333",
     fontSize: 14,
+    fontFamily: "NotoSerifJP",
   },
   profileValue: {
     color: "#111111",
     fontSize: 14,
+    fontFamily: "NotoSerifJP",
   },
   totalDistanceText: {
     color: "#111111",
@@ -232,34 +271,32 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSerifJP",
   },
   profileEditButton: {
-    marginTop: 8,
-    width: "72%",
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 3,
-    borderColor: "#9e171a",
+    position: "absolute",
+    bottom: -54,
+    width: "46%",
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: AppColors.inputBorder,
     backgroundColor: "#fff4c9",
     alignItems: "center",
     zIndex: 1,
   },
   profileEditText: {
     color: "#111111",
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "700",
-    fontFamily: "NotoSerifJP",
   },
   logoutButton: {
-    width: "52%",
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    position: "absolute",
+    top: 19,
+    right: 30,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.6)",
     alignItems: "center",
-    zIndex: 1,
-  },
-  logoutText: {
-    color: "#9e171a",
-    fontSize: 14,
-    fontWeight: "700",
-    fontFamily: "NotoSerifJP",
+    justifyContent: "center",
+    zIndex: 2,
   },
 });

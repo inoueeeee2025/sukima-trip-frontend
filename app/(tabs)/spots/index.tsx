@@ -1,10 +1,12 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
   FlatList,
   Image,
+  Modal,
+  Pressable,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -12,8 +14,11 @@ import {
   View,
 } from "react-native";
 
+
+import { getPlaceFirstPhotoUrl } from "@/api/places";
 import { deleteFavorite, Favorite, getFavorites } from "@/api/favorites";
 import { getAccessToken } from "@/components/auth/auth-storage";
+import { FavoriteSpotDetailCard } from "@/components/spots/favorite-spot-detail-card";
 
 const CARD_GAP = 12;
 const SCREEN_PADDING = 16;
@@ -25,12 +30,34 @@ export default function FavoriteSpotsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Favorite | null>(null);
+  const [detailPhotoUrl, setDetailPhotoUrl] = useState<string | null>(null);
+  const [isDetailPhotoLoading, setIsDetailPhotoLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       load();
     }, [])
   );
+
+  useEffect(() => {
+    if (!selectedItem) {
+      setDetailPhotoUrl(null);
+      setIsDetailPhotoLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setIsDetailPhotoLoading(true);
+    setDetailPhotoUrl(null);
+    getPlaceFirstPhotoUrl(selectedItem.place_id).then((url) => {
+      if (!cancelled) {
+        setDetailPhotoUrl(url);
+        setIsDetailPhotoLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [selectedItem]);
 
   async function load() {
     try {
@@ -51,14 +78,19 @@ export default function FavoriteSpotsScreen() {
   }
 
   async function handleToggleLike(item: Favorite) {
+    if (deletingId) return;
     setDeleteError(null);
+    setDeletingId(item.id);
     try {
       const token = await getAccessToken();
       if (!token) return;
       await deleteFavorite(item.id, token);
       setFavorites((prev) => prev.filter((f) => f.id !== item.id));
+      setSelectedItem(null);
     } catch {
       setDeleteError("削除に失敗しました");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -111,41 +143,75 @@ export default function FavoriteSpotsScreen() {
               </Text>
             </View>
           }
-          renderItem={({ item, index }) => (
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() =>
-                router.push({
-                  pathname: "/(tabs)/spots/[id]",
-                  params: { id: item.place_id, name: item.name },
-                })
-              }
-            >
-              {/* 写真エリア */}
-              <View style={styles.photoArea}>
-                <View style={styles.photoPlaceholder} />
-                {/* 番号バッジ */}
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{index + 1}</Text>
-                </View>
-                {/* ハートボタン */}
+          renderItem={({ item }) => (
+            <View style={styles.cardOuter}>
+              <View style={styles.card}>
+                {/* 写真エリア（タップで詳細オーバーレイ表示） */}
                 <TouchableOpacity
-                  style={styles.heartButton}
-                  onPress={() => handleToggleLike(item)}
+                  style={styles.photoArea}
+                  onPress={() => setSelectedItem(item)}
                 >
-                  <Text style={styles.heartIcon}>♥</Text>
+                  <View style={styles.photoPlaceholder} />
+                  {/* スポット名バナー：写真上にオーバーレイ */}
+                  <View style={styles.nameBanner}>
+                    <Text style={styles.spotName} numberOfLines={1}>
+                      {item.name}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
+                {/* 下部ボタンストリップ */}
+                <View style={styles.bottomStrip}>
+                  <TouchableOpacity
+                    style={styles.detailButton}
+                    onPress={() => setSelectedItem(item)}
+                  >
+                    <Text style={styles.detailButtonText}>∨</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.heartButton}
+                    onPress={() => handleToggleLike(item)}
+                    disabled={!!deletingId}
+                  >
+                    {deletingId === item.id ? (
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    ) : (
+                      <Text style={styles.heartIcon}>♥</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
               </View>
-              {/* スポット名 */}
-              <View style={styles.cardFooter}>
-                <Text style={styles.spotName} numberOfLines={2}>
-                  {item.name}
-                </Text>
+              {/* コインバッジ：カード左上角にオーバーラップ */}
+              <View style={styles.coinBadge}>
+                <Text style={styles.coinBadgeText}>{item.coin_amount ?? 0}</Text>
               </View>
-            </TouchableOpacity>
+            </View>
           )}
         />
       )}
+
+      {/* 詳細モーダル */}
+      <Modal
+        visible={selectedItem !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedItem(null)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setSelectedItem(null)}>
+          <Pressable onPress={() => {}}>
+            {selectedItem && (
+              <FavoriteSpotDetailCard
+                name={selectedItem.name}
+                coinAmount={selectedItem.coin_amount ?? 0}
+                photoUrl={detailPhotoUrl}
+                isPhotoLoading={isDetailPhotoLoading}
+                liked={true}
+                isLiking={deletingId === selectedItem?.id}
+                onHeartPress={() => handleToggleLike(selectedItem)}
+              />
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -194,63 +260,93 @@ const styles = StyleSheet.create({
   row: {
     gap: CARD_GAP,
   },
-  card: {
+  cardOuter: {
     width: CARD_WIDTH,
-    borderRadius: 8,
+    position: "relative",
+  },
+  card: {
+    width: "100%",
+    borderRadius: 12,
     overflow: "hidden",
     borderWidth: 3,
-    borderColor: "#c8a800",
-    backgroundColor: "#ffffff",
+    borderColor: "#c8b87a",
+    backgroundColor: "#f0e8d0",
   },
   photoArea: {
     width: "100%",
-    height: CARD_WIDTH * 0.8,
+    height: CARD_WIDTH * 0.82,
     position: "relative",
   },
   photoPlaceholder: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#b0e0ec",
+    backgroundColor: "#b0d8e8",
   },
-  badge: {
+  nameBanner: {
     position: "absolute",
-    top: 6,
-    left: 6,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#c8a800",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeText: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  heartButton: {
-    position: "absolute",
-    bottom: 6,
-    right: 6,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#ffffff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heartIcon: {
-    fontSize: 14,
-    color: "#e74c3c",
-  },
-  cardFooter: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    top: 10,
+    left: 50,
+    right: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: "rgba(50, 42, 28, 0.88)",
+    borderRadius: 5,
   },
   spotName: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#1a1a1a",
+    color: "#ffffff",
+  },
+  bottomStrip: {
+    height: 42,
+    backgroundColor: "#f0e8d0",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 10,
+  },
+  detailButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#888888",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailButtonText: {
+    fontSize: 14,
+    color: "#555555",
+    lineHeight: 16,
+  },
+  heartButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#e74c3c",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heartIcon: {
+    fontSize: 18,
+    color: "#ffffff",
+  },
+  coinBadge: {
+    position: "absolute",
+    top: 4,
+    left: 4,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#e8b800",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  coinBadgeText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "700",
   },
   center: {
     flex: 1,
@@ -285,5 +381,12 @@ const styles = StyleSheet.create({
   retryText: {
     color: "#fff",
     fontWeight: "600",
+  },
+  // --- 詳細モーダル ---
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

@@ -7,7 +7,7 @@ type AuthResponse = {
   user_id: string;
 };
 
-type RegisterInput = {
+export type RegisterInput = {
   email: string;
   password: string;
   name: string;

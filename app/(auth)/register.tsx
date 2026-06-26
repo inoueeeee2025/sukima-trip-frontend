@@ -14,20 +14,15 @@ import {
   View,
 } from "react-native";
 
-import { register } from "@/api/auth";
 import { uploadAvatar } from "@/api/profile";
-import { saveAccessToken } from "@/components/auth/auth-storage";
+import { useAuth } from "@/components/auth/use-auth";
 import { AppColors } from "@/constants/theme";
+import { GenderLabel, GENDERS, GENDER_VALUES } from "@/constants/gender";
 
-type Gender = "男性" | "女性" | "その他";
-const GENDERS: Gender[] = ["男性", "女性", "その他"];
-const GENDER_VALUES: Record<Gender, string> = {
-  男性: "male",
-  女性: "female",
-  その他: "other",
-};
+type Gender = GenderLabel;
 
 export default function RegisterScreen() {
+  const { registerUser } = useAuth();
   const [name, setName] = useState("");
   const [gender, setGender] = useState<Gender | "">("");
   const [email, setEmail] = useState("");
@@ -72,8 +67,7 @@ export default function RegisterScreen() {
     setIsLoading(true);
 
     try {
-      const result = await register({ email, password, name, gender: gender ? GENDER_VALUES[gender] : "" });
-      await saveAccessToken(result.access_token);
+      const result = await registerUser({ email, password, name, gender: gender ? GENDER_VALUES[gender] : "" });
       if (avatarUri) {
         await uploadAvatar(avatarUri, result.access_token).catch(() => {
           Alert.alert(
@@ -82,7 +76,6 @@ export default function RegisterScreen() {
           );
         });
       }
-      router.replace("/(tabs)");
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "新規登録に失敗しました"

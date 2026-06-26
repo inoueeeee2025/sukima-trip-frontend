@@ -65,8 +65,6 @@ export function SpotDiscoveredOverlay({
       {/* スポット発見！バナー */}
       <Image
         source={spotDiscoveredBanner}
-        style={styles.discoveredBanner}
-        resizeMode="stretch"
       />
 
       {/* スポットカード */}
@@ -142,10 +140,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     flexDirection: "column",
-  },
-  discoveredBanner: {
-    width: "100%",
-    height: 56,
   },
   cardScroll: {
     flex: 1,
@@ -259,31 +253,39 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: "row",
-    gap: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: "transparent",
   },
   exitButton: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    borderRadius: 8,
+    backgroundColor: "#ffffff",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#aaaaaa",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   exitButtonText: {
     color: "#333333",
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   continueButton: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: 8,
     backgroundColor: "#43A958",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   continueButtonText: {
     color: "#ffffff",

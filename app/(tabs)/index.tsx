@@ -5,10 +5,10 @@ import {
   Animated,
   Image,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getCoinBalance } from "@/api/coins";
 import {
@@ -367,7 +367,7 @@ export default function HomeScreen() {
 
   if (isCheckingAuth) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.content}>
           <ActivityIndicator size="large" color="#1f6f5f" />
           <ThemedText>ログイン状態を確認中です...</ThemedText>
@@ -381,7 +381,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       {isWalkMode && virtualTrip.currentPoint ? (
         <WalkModeScreen
           latitude={virtualTrip.currentPoint.latitude}
@@ -665,10 +665,10 @@ const styles = StyleSheet.create({
   },
   distanceBadge: {
     position: "absolute",
-    top: 10,
+    top: 8,
     alignSelf: "center",
     width: 160,
-    height: 48,
+    height: 60,
     borderRadius: 20,
     borderWidth: 4,
     borderColor: "#9e171a",
@@ -679,6 +679,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   footprintIcon: {
+    position: "absolute",
+    left: 6,
     width: 32,
     height: 32,
     resizeMode: "contain",
@@ -687,8 +689,11 @@ const styles = StyleSheet.create({
     color: "#111111",
     fontSize: 28,
     fontWeight: "800",
+    lineHeight: 34,
   },
   distanceUnit: {
+    position: "absolute",
+    right: 8,
     color: "#111111",
     fontSize: 22,
     fontWeight: "700",

@@ -1,10 +1,12 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
   FlatList,
   Image,
+  Modal,
+  Pressable,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -12,6 +14,7 @@ import {
   View,
 } from "react-native";
 
+import { getPlaceFirstPhotoUrl } from "@/api/places";
 import { deleteFavorite, Favorite, getFavorites } from "@/api/favorites";
 import { getAccessToken } from "@/components/auth/auth-storage";
 
@@ -19,18 +22,34 @@ const CARD_GAP = 12;
 const SCREEN_PADDING = 16;
 const CARD_WIDTH =
   (Dimensions.get("window").width - SCREEN_PADDING * 2 - CARD_GAP) / 2;
+const DETAIL_CARD_WIDTH = Dimensions.get("window").width * 0.72;
 
 export default function FavoriteSpotsScreen() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Favorite | null>(null);
+  const [detailPhotoUrl, setDetailPhotoUrl] = useState<string | null>(null);
+  const [isDetailPhotoLoading, setIsDetailPhotoLoading] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       load();
     }, [])
   );
+
+  useEffect(() => {
+    if (!selectedItem) {
+      setDetailPhotoUrl(null);
+      return;
+    }
+    setIsDetailPhotoLoading(true);
+    getPlaceFirstPhotoUrl(selectedItem.place_id).then((url) => {
+      setDetailPhotoUrl(url);
+      setIsDetailPhotoLoading(false);
+    });
+  }, [selectedItem]);
 
   async function load() {
     try {
@@ -57,6 +76,7 @@ export default function FavoriteSpotsScreen() {
       if (!token) return;
       await deleteFavorite(item.id, token);
       setFavorites((prev) => prev.filter((f) => f.id !== item.id));
+      setSelectedItem(null);
     } catch {
       setDeleteError("削除に失敗しました");
     }
@@ -114,15 +134,10 @@ export default function FavoriteSpotsScreen() {
           renderItem={({ item }) => (
             <View style={styles.cardOuter}>
               <View style={styles.card}>
-                {/* 写真エリア（タップで詳細へ遷移、名前バナーをオーバーレイ） */}
+                {/* 写真エリア（タップで詳細オーバーレイ表示） */}
                 <TouchableOpacity
                   style={styles.photoArea}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/(tabs)/spots/[id]",
-                      params: { id: item.place_id, name: item.name },
-                    })
-                  }
+                  onPress={() => setSelectedItem(item)}
                 >
                   <View style={styles.photoPlaceholder} />
                   {/* スポット名バナー：写真上にオーバーレイ */}
@@ -136,12 +151,7 @@ export default function FavoriteSpotsScreen() {
                 <View style={styles.bottomStrip}>
                   <TouchableOpacity
                     style={styles.detailButton}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/(tabs)/spots/[id]",
-                        params: { id: item.place_id, name: item.name },
-                      })
-                    }
+                    onPress={() => setSelectedItem(item)}
                   >
                     <Text style={styles.detailButtonText}>∨</Text>
                   </TouchableOpacity>
@@ -161,6 +171,66 @@ export default function FavoriteSpotsScreen() {
           )}
         />
       )}
+
+      {/* 詳細モーダル */}
+      <Modal
+        visible={selectedItem !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedItem(null)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setSelectedItem(null)}>
+          <Pressable onPress={() => {}}>
+            <View style={styles.detailCardOuter}>
+              <View style={styles.detailCard}>
+                {/* 写真エリア */}
+                <View style={styles.detailPhotoArea}>
+                  {isDetailPhotoLoading ? (
+                    <View style={styles.detailPhotoPlaceholder}>
+                      <ActivityIndicator color="#ffffff" />
+                    </View>
+                  ) : detailPhotoUrl ? (
+                    <Image
+                      source={{ uri: detailPhotoUrl }}
+                      style={styles.detailPhotoImage}
+                    />
+                  ) : (
+                    <View style={styles.detailPhotoPlaceholder} />
+                  )}
+
+                  {/* スポット名バナー */}
+                  <View style={styles.detailNameBanner}>
+                    <Text style={styles.detailSpotName} numberOfLines={1}>
+                      {selectedItem?.name}
+                    </Text>
+                  </View>
+
+                  {/* ハートボタン */}
+                  <TouchableOpacity
+                    style={styles.detailHeartButton}
+                    onPress={() => selectedItem && handleToggleLike(selectedItem)}
+                  >
+                    <Image
+                      source={require("@/assets/images/spots/like-icon.png")}
+                      style={styles.detailHeartIcon}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {/* 下部エリア */}
+                <View style={styles.detailBottomArea} />
+              </View>
+
+              {/* コインバッジ */}
+              <View style={styles.detailCoinBadge}>
+                <Text style={styles.detailCoinBadgeText}>
+                  {selectedItem?.coin_amount ?? 0}
+                </Text>
+              </View>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -330,5 +400,103 @@ const styles = StyleSheet.create({
   retryText: {
     color: "#fff",
     fontWeight: "600",
+  },
+  // --- 詳細モーダル ---
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  detailCardOuter: {
+    width: DETAIL_CARD_WIDTH,
+    position: "relative",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  detailCard: {
+    width: DETAIL_CARD_WIDTH,
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: 3,
+    borderColor: "#c8b87a",
+    backgroundColor: "#f0e8d0",
+  },
+  detailPhotoArea: {
+    width: "100%",
+    aspectRatio: 1,
+    position: "relative",
+  },
+  detailPhotoImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  detailPhotoPlaceholder: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#b0d8e8",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  detailNameBanner: {
+    position: "absolute",
+    top: 12,
+    left: 44,
+    right: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: "rgba(50, 42, 28, 0.88)",
+    borderRadius: 5,
+  },
+  detailSpotName: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#ffffff",
+  },
+  detailHeartButton: {
+    position: "absolute",
+    bottom: 12,
+    right: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  detailHeartIcon: {
+    width: 22,
+    height: 22,
+    resizeMode: "contain",
+  },
+  detailBottomArea: {
+    height: 100,
+    backgroundColor: "#f0e8d0",
+  },
+  detailCoinBadge: {
+    position: "absolute",
+    top: -10,
+    left: -10,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#e8b800",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  detailCoinBadgeText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

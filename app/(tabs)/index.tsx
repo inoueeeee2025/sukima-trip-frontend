@@ -451,7 +451,7 @@ export default function HomeScreen() {
               <ThemedText style={styles.distanceText}>...</ThemedText>
             ) : (
               <ThemedText style={styles.distanceText}>
-                {todayMovement?.real_distance_km ?? 0}
+                {remainingVirtualDistanceKm}
               </ThemedText>
             )}
 

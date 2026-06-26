@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Image, ImageBackground, Pressable, StyleSheet, View } from "react-native";
 
-import { getNearestSpot, type NearestSpotResponse } from "@/api/spots";
+import { arriveAtSpot, getNearestSpot, type ArriveResponse, type NearestSpotResponse } from "@/api/spots";
 import { getAccessToken } from "@/components/auth/auth-storage";
+import { SpotDiscoveredOverlay } from "@/components/walk-mode/spot-discovered-overlay";
 import {
   StreetViewPanel,
   type StreetViewPosition,
@@ -37,7 +38,11 @@ export function WalkModeScreen({
   const [isNearestSpotCardOpen, setIsNearestSpotCardOpen] = useState(false);
   const [nearestSpot, setNearestSpot] = useState<NearestSpotResponse | null>(null);
   const [streetViewHeading, setStreetViewHeading] = useState(0);
+  const [discoveredSpot, setDiscoveredSpot] = useState<
+    (ArriveResponse & { spotName: string; placeId: string }) | null
+  >(null);
   const lastFetchTimeRef = useRef<number>(0);
+  const arrivedPlaceIdsRef = useRef<Set<string>>(new Set());
 
   async function fetchNearestSpot(lat: number, lng: number) {
     const now = Date.now();
@@ -50,6 +55,22 @@ export function WalkModeScreen({
     try {
       const result = await getNearestSpot(lat, lng, token);
       setNearestSpot(result);
+      console.log(`[NearestSpot] ${result.name}: ${result.distance_km.toFixed(3)}km`);
+
+      if (result.distance_km < 0.2 && !arrivedPlaceIdsRef.current.has(result.place_id)) {
+        arrivedPlaceIdsRef.current.add(result.place_id);
+        try {
+          const arrived = await arriveAtSpot(
+            result.place_id,
+            { place_name: result.name, lat, lng },
+            token
+          );
+          setDiscoveredSpot({ ...arrived, spotName: result.name, placeId: result.place_id });
+        } catch (arriveError) {
+          console.error("[arriveAtSpot] failed:", arriveError);
+          arrivedPlaceIdsRef.current.delete(result.place_id);
+        }
+      }
     } catch {
       // 取得失敗時は前回の値を維持
     }
@@ -89,36 +110,38 @@ export function WalkModeScreen({
         </ImageBackground>
       </View>
 
-      <View style={styles.topOverlay}>
-        <Pressable
-          style={styles.directionButton}
-          onPress={() => {
-            setIsNearestSpotCardOpen((current) => !current);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="最短スポットの方向"
-        >
-          <Image
-            source={arrowImage}
-            style={[
-              styles.directionArrow,
-              {
-                transform: [
-                  {
-                    rotate: `${((nearestSpot?.bearing ?? 0) - streetViewHeading + 360) % 360}deg`,
-                  },
-                ],
-              },
-            ]}
-          />
-        </Pressable>
+      {!discoveredSpot && (
+        <View style={styles.topOverlay}>
+          <Pressable
+            style={styles.directionButton}
+            onPress={() => {
+              setIsNearestSpotCardOpen((current) => !current);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="最短スポットの方向"
+          >
+            <Image
+              source={arrowImage}
+              style={[
+                styles.directionArrow,
+                {
+                  transform: [
+                    {
+                      rotate: `${((nearestSpot?.bearing ?? 0) - streetViewHeading + 360) % 360}deg`,
+                    },
+                  ],
+                },
+              ]}
+            />
+          </Pressable>
 
-        <Pressable style={styles.closeButton} onPress={onExit}>
-          <ThemedText style={styles.closeButtonText}>×</ThemedText>
-        </Pressable>
-      </View>
+          <Pressable style={styles.closeButton} onPress={onExit}>
+            <ThemedText style={styles.closeButtonText}>×</ThemedText>
+          </Pressable>
+        </View>
+      )}
 
-      {isNearestSpotCardOpen ? (
+      {!discoveredSpot && isNearestSpotCardOpen ? (
         <View style={styles.nearestSpotCard}>
           <ThemedText style={styles.nearestSpotHeading}>
             最短スポット案内
@@ -134,9 +157,23 @@ export function WalkModeScreen({
         </View>
       ) : null}
 
-      <View style={styles.locationPill}>
-        <ThemedText style={styles.locationText}>{locationName}</ThemedText>
-      </View>
+      {!discoveredSpot && (
+        <View style={styles.locationPill}>
+          <ThemedText style={styles.locationText}>{locationName}</ThemedText>
+        </View>
+      )}
+
+      {discoveredSpot && (
+        <SpotDiscoveredOverlay
+          spotName={discoveredSpot.spotName}
+          placeId={discoveredSpot.placeId}
+          coinEarned={discoveredSpot.coin_earned}
+          photoUrl={discoveredSpot.photo_url}
+          wikiSummary={discoveredSpot.wiki_summary}
+          onContinue={() => setDiscoveredSpot(null)}
+          onExit={onExit}
+        />
+      )}
     </View>
   );
 }

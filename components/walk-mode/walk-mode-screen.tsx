@@ -34,7 +34,7 @@ export function WalkModeScreen({
   onAddressChange,
   onExit,
 }: WalkModeScreenProps) {
-  const [isNearestSpotCardOpen, setIsNearestSpotCardOpen] = useState(true);
+  const [isNearestSpotCardOpen, setIsNearestSpotCardOpen] = useState(false);
   const [nearestSpot, setNearestSpot] = useState<NearestSpotResponse | null>(null);
   const [streetViewHeading, setStreetViewHeading] = useState(0);
   const lastFetchTimeRef = useRef<number>(0);

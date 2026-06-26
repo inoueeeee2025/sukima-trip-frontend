@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     width: "88%",
     maxWidth: 380,
     alignItems: "center",
-    gap: 12,
+    gap: 4,
     zIndex: 1,
   },
   dashboardPassportImage: {
@@ -237,7 +237,6 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSerifJP",
   },
   profileEditButton: {
-    marginTop: -16,
     width: "56%",
     paddingVertical: 8,
     borderRadius: 10,

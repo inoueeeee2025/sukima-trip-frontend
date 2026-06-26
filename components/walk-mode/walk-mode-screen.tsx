@@ -65,17 +65,13 @@ export function WalkModeScreen({
         try {
           const arrived = await arriveAtSpot(
             result.place_id,
-            { place_name: result.name },
+            { place_name: result.name, lat, lng },
             token
           );
           setDiscoveredSpot({ ...arrived, spotName: result.name, placeId: result.place_id });
         } catch (arriveError) {
-          const isAlreadyArrived =
-            arriveError instanceof Error &&
-            arriveError.message.includes("到着済み");
-          if (!isAlreadyArrived) {
-            arrivedPlaceIdsRef.current.delete(result.place_id);
-          }
+          console.error("[arriveAtSpot] failed:", arriveError);
+          arrivedPlaceIdsRef.current.delete(result.place_id);
         } finally {
           setIsArriving(false);
         }

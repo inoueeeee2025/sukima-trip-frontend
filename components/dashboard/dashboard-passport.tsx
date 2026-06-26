@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     position: "absolute",
     top: 19,
-    right: 16,
+    right: 18,
     width: 36,
     height: 36,
     borderRadius: 18,

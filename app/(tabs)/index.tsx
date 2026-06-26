@@ -9,6 +9,7 @@ import { getCoinBalance } from "@/api/coins";
 import {
   getTodayMovements,
   getTotalMovements,
+  updateTodayMovement,
   TodayMovementResponse,
   TotalMovementResponse,
 } from "@/api/movements";
@@ -169,10 +170,10 @@ export default function HomeScreen() {
     0,
   );
 
- const displayedHeldRealDistanceKm =
-  remainingVirtualDistanceKm <= VIRTUAL_DISTANCE_FINISH_THRESHOLD_KM
-    ? 0
-    : remainingVirtualDistanceKm / VIRTUAL_DISTANCE_MULTIPLIER;
+  const displayedHeldRealDistanceKm =
+    remainingVirtualDistanceKm <= VIRTUAL_DISTANCE_FINISH_THRESHOLD_KM
+      ? 0
+      : remainingVirtualDistanceKm / VIRTUAL_DISTANCE_MULTIPLIER;
   const hasUsedAllVirtualDistance =
     isWalkMode &&
     remainingVirtualDistanceKm <= VIRTUAL_DISTANCE_FINISH_THRESHOLD_KM;
@@ -274,8 +275,66 @@ export default function HomeScreen() {
     setIsWalkExitConfirmOpen(true);
   }
 
-  function handleConfirmExitWalkMode() {
+  function calculateCurrentConsumedVirtualDistanceKm() {
+    return virtualTrip.movementLog.reduce(
+      (totalDistanceKm, log) => totalDistanceKm + log.distanceKm,
+      0,
+    );
+  }
+
+  async function saveWalkSessionMovement() {
+    const token = await getAccessToken();
+
+    if (!token) {
+      return;
+    }
+
+    const usedVirtualDistanceKm = calculateCurrentConsumedVirtualDistanceKm();
+
+    if (walkSession.realDistanceKm <= 0 && usedVirtualDistanceKm <= 0) {
+      return;
+    }
+
+    console.log("saveWalkSessionMovement input", {
+      real_distance_km: walkSession.realDistanceKm,
+      used_virtual_distance_km: usedVirtualDistanceKm,
+    });
+
+    await updateTodayMovement(
+      {
+        real_distance_km: walkSession.realDistanceKm,
+        used_virtual_distance_km: usedVirtualDistanceKm,
+      },
+      token,
+    );
+
+    const [movementResult, totalMovementResult] = await Promise.all([
+      getTodayMovements(token),
+      getTotalMovements(token),
+    ]);
+
+    setTodayMovement(movementResult);
+    setTotalMovement(totalMovementResult);
+
+    setVirtualTrip((current) => ({
+      ...current,
+      totalVirtualDistanceKm: movementResult.virtual_distance_km,
+      usedVirtualDistanceKm: movementResult.used_virtual_distance_km,
+      movementLog: [],
+    }));
+
+    setWalkSession(INITIAL_WALK_SESSION);
+  }
+
+  async function handleConfirmExitWalkMode() {
     setIsWalkExitConfirmOpen(false);
+
+    try {
+      await saveWalkSessionMovement();
+    } catch (error) {
+      console.warn("探索終了時の距離保存に失敗しました", error);
+    }
+
     setIsWalkMode(false);
     setIsExploreMode(true);
   }
@@ -284,8 +343,15 @@ export default function HomeScreen() {
     setIsWalkExitConfirmOpen(false);
   }
 
-  function handleCloseWalkFinishedModal() {
+  async function handleCloseWalkFinishedModal() {
     setIsWalkFinishedModalOpen(false);
+
+    try {
+      await saveWalkSessionMovement();
+    } catch (error) {
+      console.warn("探索終了時の距離保存に失敗しました", error);
+    }
+
     setIsWalkMode(false);
     setIsExploreMode(true);
   }
@@ -582,7 +648,6 @@ export default function HomeScreen() {
                 <ThemedText style={styles.walkExitConfirmTitle}>
                   探索を終了しますか？
                 </ThemedText>
-              
 
                 <View style={styles.walkExitConfirmActions}>
                   <Pressable

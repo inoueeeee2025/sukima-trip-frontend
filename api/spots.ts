@@ -17,8 +17,6 @@ export type NearestSpotResponse = {
 
 export type ArriveRequest = {
   place_name: string;
-  lat: number;
-  lng: number;
 };
 
 export type ArriveResponse = {

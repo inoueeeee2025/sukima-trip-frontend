@@ -42,6 +42,21 @@ export function WalkModeScreen({
         onAddressChange={onAddressChange}
       />
 
+      <View style={styles.remainingSignWrapper}>
+        <ImageBackground
+          source={signboardImage}
+          style={styles.remainingSign}
+          imageStyle={styles.remainingSignImage}
+          resizeMode="contain"
+        >
+          <ThemedText style={styles.remainingLabel}>残り</ThemedText>
+          <ThemedText style={styles.remainingNumber}>
+            {remainingVirtualDistanceKm.toFixed(0)}
+          </ThemedText>
+          <ThemedText style={styles.remainingUnit}>km</ThemedText>
+        </ImageBackground>
+      </View>
+
       <View style={styles.topOverlay}>
         <Pressable
           style={styles.directionButton}
@@ -52,24 +67,6 @@ export function WalkModeScreen({
           <ThemedText style={styles.directionArrow}>↑</ThemedText>
         </Pressable>
 
-        <View style={styles.remainingSignWrapper}>
-          <View style={styles.hangingLineLeft} />
-          <View style={styles.hangingLineRight} />
-
-          <ImageBackground
-            source={signboardImage}
-            style={styles.remainingSign}
-            imageStyle={styles.remainingSignImage}
-            resizeMode="stretch"
-          >
-            <ThemedText style={styles.remainingLabel}>残り</ThemedText>
-            <ThemedText style={styles.remainingNumber}>
-              {remainingVirtualDistanceKm.toFixed(0)}
-            </ThemedText>
-            <ThemedText style={styles.remainingUnit}>km</ThemedText>
-          </ImageBackground>
-        </View>
-
         <Pressable style={styles.closeButton} onPress={onExit}>
           <ThemedText style={styles.closeButtonText}>×</ThemedText>
         </Pressable>
@@ -78,7 +75,7 @@ export function WalkModeScreen({
       {isNearestSpotCardOpen ? (
         <View style={styles.nearestSpotCard}>
           <ThemedText style={styles.nearestSpotHeading}>
-            ^　最短スポット案内
+            最短スポット案内
           </ThemedText>
           <ThemedText style={styles.nearestSpotName}>
             エッフェル塔まで
@@ -102,7 +99,7 @@ const styles = StyleSheet.create({
   topOverlay: {
     position: "absolute",
     top: 58,
-    left: 22,
+    left: 0,
     right: 10,
     flexDirection: "row",
     alignItems: "flex-start",
@@ -117,6 +114,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: "#FFFFFF",
     backgroundColor: "#43A958",
+    marginLeft: 20,
   },
   directionArrow: {
     color: "#FFFFFF",
@@ -125,35 +123,22 @@ const styles = StyleSheet.create({
     fontWeight: "300",
   },
   remainingSignWrapper: {
-    position: "relative",
-    minWidth: 190,
+    position: "absolute",
+    left: 0,
+    right: 0,
     alignItems: "center",
-    marginTop: 1,
-  },
-  hangingLineLeft: {
-    position: "absolute",
-    top: -76,
-    left: 43,
-    width: 2,
-    height: 84,
-    backgroundColor: "rgba(92, 82, 70, 0.72)",
-  },
-  hangingLineRight: {
-    position: "absolute",
-    top: -76,
-    right: 43,
-    width: 2,
-    height: 84,
-    backgroundColor: "rgba(92, 82, 70, 0.72)",
+    marginTop: 0,
   },
   remainingSign: {
-    width: 210,
-    height: 78,
+    width: 353,
+    height: 131,
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "center",
     paddingHorizontal: 14,
-    paddingBottom: 15,
+    paddingTop: 16,
+    paddingBottom: 5,
+    overflow: "visible",
   },
   remainingSignImage: {
     borderRadius: 12,
@@ -162,6 +147,7 @@ const styles = StyleSheet.create({
     color: "#111111",
     fontFamily: "MochiyPopOne",
     fontSize: 22,
+    lineHeight: 28,
     marginRight: 9,
     marginBottom: 2,
   },
@@ -169,13 +155,14 @@ const styles = StyleSheet.create({
     color: "#A91F25",
     fontFamily: "MochiyPopOne",
     fontSize: 36,
-    lineHeight: 38,
+    lineHeight: 50,
     letterSpacing: 1,
   },
   remainingUnit: {
     color: "#111111",
     fontFamily: "MochiyPopOne",
     fontSize: 16,
+    lineHeight: 20,
     marginLeft: 8,
     marginBottom: 4,
   },
@@ -186,6 +173,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 17,
     backgroundColor: "#B11F2C",
+    marginTop: -35,
   },
   closeButtonText: {
     color: "#FFFFFF",
@@ -205,21 +193,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.8)",
     backgroundColor: "rgba(60, 165, 83, 0.88)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   nearestSpotHeading: {
     color: "#EAF8E9",
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "700",
+    textDecorationLine: "underline",
   },
   nearestSpotName: {
     color: "#FFFFFF",
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: "700",
     marginTop: 8,
   },
   nearestSpotDistance: {
     color: "#FFFFFF",
-    fontSize: 21,
+    fontSize: 23,
     fontWeight: "900",
     marginTop: 8,
   },

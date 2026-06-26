@@ -95,6 +95,8 @@ export function WalkModeScreen({
           onPress={() => {
             setIsNearestSpotCardOpen((current) => !current);
           }}
+          accessibilityRole="button"
+          accessibilityLabel="最短スポットの方向"
         >
           <Image
             source={arrowImage}

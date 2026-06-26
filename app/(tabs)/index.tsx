@@ -143,21 +143,7 @@ export default function HomeScreen() {
 
   async function handleLogout() {
     await logoutUser();
-    setIsDashboardOpen(false);
-    setIsExploreMode(false);
-    setIsWalkMode(false);
-    setSelectedLandingPoint(null);
-    setPendingStreetViewPoint(null);
-    setVirtualTrip({
-      startPoint: null,
-      currentPoint: null,
-      totalVirtualDistanceKm: 0,
-      usedVirtualDistanceKm: 0,
-      movementLog: [],
-    });
-    setProfile(null);
-    setTodayMovement(null);
-    setTotalMovement(null);
+    router.replace("/(auth)/login");
   }
 
   const DEFAULT_MAP_CENTER: TripPoint = {

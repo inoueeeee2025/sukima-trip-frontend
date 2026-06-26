@@ -37,34 +37,40 @@ export function WalkModeScreen({
   const [isNearestSpotCardOpen, setIsNearestSpotCardOpen] = useState(true);
   const [nearestSpot, setNearestSpot] = useState<NearestSpotResponse | null>(null);
   const lastFetchTimeRef = useRef<number>(0);
+  const latestPositionRef = useRef<{ lat: number; lng: number }>({ lat: latitude, lng: longitude });
 
-  useEffect(() => {
+  async function fetchNearestSpot(lat: number, lng: number) {
     const now = Date.now();
     if (now - lastFetchTimeRef.current < 3000) return;
-
     lastFetchTimeRef.current = now;
 
-    async function fetchNearestSpot() {
-      const token = await getAccessToken();
-      if (!token) return;
+    const token = await getAccessToken();
+    if (!token) return;
 
-      try {
-        const result = await getNearestSpot(latitude, longitude, token);
-        setNearestSpot(result);
-      } catch {
-        // 取得失敗時は前回の値を維持
-      }
+    try {
+      const result = await getNearestSpot(lat, lng, token);
+      setNearestSpot(result);
+    } catch {
+      // 取得失敗時は前回の値を維持
     }
+  }
 
-    fetchNearestSpot();
-  }, [latitude, longitude]);
+  // ウォーク開始時に初回取得
+  useEffect(() => {
+    fetchNearestSpot(latitude, longitude);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <View style={styles.container}>
       <StreetViewPanel
         latitude={latitude}
         longitude={longitude}
         onStatusChange={onStatusChange}
-        onPositionChange={onPositionChange}
+        onPositionChange={(position) => {
+          latestPositionRef.current = { lat: position.latitude, lng: position.longitude };
+          fetchNearestSpot(position.latitude, position.longitude);
+          onPositionChange(position);
+        }}
         onAddressChange={onAddressChange}
       />
 

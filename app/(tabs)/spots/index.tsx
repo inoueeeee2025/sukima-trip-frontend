@@ -33,6 +33,7 @@ export default function FavoriteSpotsScreen() {
   const [selectedItem, setSelectedItem] = useState<Favorite | null>(null);
   const [detailPhotoUrl, setDetailPhotoUrl] = useState<string | null>(null);
   const [isDetailPhotoLoading, setIsDetailPhotoLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -43,6 +44,7 @@ export default function FavoriteSpotsScreen() {
   useEffect(() => {
     if (!selectedItem) {
       setDetailPhotoUrl(null);
+      setIsDetailPhotoLoading(false);
       return;
     }
     let cancelled = false;
@@ -77,6 +79,7 @@ export default function FavoriteSpotsScreen() {
 
   async function handleToggleLike(item: Favorite) {
     setDeleteError(null);
+    setIsDeleting(true);
     try {
       const token = await getAccessToken();
       if (!token) return;
@@ -85,6 +88,8 @@ export default function FavoriteSpotsScreen() {
       setSelectedItem(null);
     } catch {
       setDeleteError("削除に失敗しました");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -194,7 +199,7 @@ export default function FavoriteSpotsScreen() {
                 photoUrl={detailPhotoUrl}
                 isPhotoLoading={isDetailPhotoLoading}
                 liked={true}
-                isLiking={false}
+                isLiking={isDeleting}
                 onHeartPress={() => handleToggleLike(selectedItem)}
               />
             )}

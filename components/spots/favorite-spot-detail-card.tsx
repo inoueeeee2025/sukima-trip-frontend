@@ -53,14 +53,16 @@ export function FavoriteSpotDetailCard({
 
           {/* ハートボタン */}
           <TouchableOpacity
-            style={styles.heartButton}
+            style={[styles.heartButton, !liked && styles.heartButtonInactive]}
             onPress={onHeartPress}
             disabled={isLiking}
           >
             {isLiking ? (
-              <ActivityIndicator size="small" color="#ffffff" />
+              <ActivityIndicator size="small" color={liked ? "#ffffff" : "#e74c3c"} />
             ) : (
-              <Text style={styles.heartIcon}>♥</Text>
+              <Text style={[styles.heartIcon, !liked && styles.heartIconInactive]}>
+                {liked ? "♥" : "♡"}
+              </Text>
             )}
           </TouchableOpacity>
         </View>
@@ -138,9 +140,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  heartButtonInactive: {
+    backgroundColor: "#ffffff",
+    borderWidth: 1.5,
+    borderColor: "#e74c3c",
+  },
   heartIcon: {
     fontSize: 20,
     color: "#ffffff",
+  },
+  heartIconInactive: {
+    color: "#e74c3c",
   },
   bottomArea: {
     height: 100,

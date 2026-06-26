@@ -10,7 +10,7 @@ import { AppColors } from "@/constants/theme";
 type DashboardPassportProps = {
   todayMovement: TodayMovementResponse | null;
   totalMovement: TotalMovementResponse | null;
-  coinBalance: number | null;
+  todayCoins: number | null;
   onLogout: () => void;
   onEditProfile?: () => void;
   avatarUrl?: string | null;
@@ -21,7 +21,7 @@ type DashboardPassportProps = {
 export function DashboardPassport({
   todayMovement,
   totalMovement,
-  coinBalance,
+  todayCoins,
   onLogout,
   onEditProfile,
   avatarUrl,
@@ -52,7 +52,7 @@ export function DashboardPassport({
         <ThemedText style={styles.dashboardSmallText}>
           ＜今日の獲得コイン数＞
         </ThemedText>
-        <ThemedText style={styles.dashboardCoinText}>{coinBalance ?? "-"} C</ThemedText>
+        <ThemedText style={styles.dashboardCoinText}>{todayCoins ?? "-"} C</ThemedText>
 
         <View style={styles.passportInfoArea}>
           <View style={styles.passportCharacterArea}>

@@ -1,3 +1,4 @@
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Image, Pressable, StyleSheet, View } from "react-native";
 import { useState } from "react";
 
@@ -32,6 +33,11 @@ export function DashboardPassport({
         source={require("@/assets/images/dashboard/passport-open.png")}
         style={styles.dashboardPassportImage}
       />
+
+      {/* ログアウトボタン（右上） */}
+      <Pressable style={styles.logoutButton} onPress={onLogout}>
+        <MaterialIcons name="exit-to-app" size={22} color="#9e171a" />
+      </Pressable>
 
       <View style={styles.dashboardContent}>
         <ThemedText style={styles.dashboardSectionTitle}>
@@ -98,10 +104,6 @@ export function DashboardPassport({
 
       <Pressable style={styles.profileEditButton} onPress={onEditProfile}>
         <ThemedText style={styles.profileEditText}>プロフィール変更</ThemedText>
-      </Pressable>
-
-      <Pressable style={styles.logoutButton} onPress={onLogout}>
-        <ThemedText style={styles.logoutText}>ログアウト</ThemedText>
       </Pressable>
     </View>
   );
@@ -252,17 +254,15 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSerifJP",
   },
   logoutButton: {
-    width: "52%",
-    paddingVertical: 8,
-    borderRadius: 999,
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: "rgba(255, 255, 255, 0.85)",
     alignItems: "center",
-    zIndex: 1,
-  },
-  logoutText: {
-    color: "#9e171a",
-    fontSize: 14,
-    fontWeight: "700",
-    fontFamily: "NotoSerifJP",
+    justifyContent: "center",
+    zIndex: 2,
   },
 });

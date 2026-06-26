@@ -12,6 +12,7 @@ import {
 import { getProfile, ProfileResponse } from "@/api/profile";
 import { getAccessToken } from "@/components/auth/auth-storage";
 import { ThemedText } from "@/components/themed-text";
+import { GENDER_LABELS } from "@/constants/gender";
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
@@ -83,7 +84,7 @@ export default function ProfileScreen() {
             <View style={styles.card}>
               <ThemedText>名前: {profile.name}</ThemedText>
               <ThemedText>ユーザーID: {profile.id}</ThemedText>
-              <ThemedText>性別: {profile.gender || "未設定"}</ThemedText>
+              <ThemedText>性別: {(profile.gender && GENDER_LABELS[profile.gender]) || profile.gender || "未設定"}</ThemedText>
             </View>
           </>
         ) : (

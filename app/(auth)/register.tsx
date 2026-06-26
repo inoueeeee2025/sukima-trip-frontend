@@ -18,14 +18,9 @@ import { register } from "@/api/auth";
 import { uploadAvatar } from "@/api/profile";
 import { saveAccessToken } from "@/components/auth/auth-storage";
 import { AppColors } from "@/constants/theme";
+import { GenderLabel, GENDERS, GENDER_VALUES } from "@/constants/gender";
 
-type Gender = "男性" | "女性" | "その他";
-const GENDERS: Gender[] = ["男性", "女性", "その他"];
-const GENDER_VALUES: Record<Gender, string> = {
-  男性: "male",
-  女性: "female",
-  その他: "other",
-};
+type Gender = GenderLabel;
 
 export default function RegisterScreen() {
   const [name, setName] = useState("");

@@ -1,21 +1,15 @@
-
 import { router, useFocusEffect } from "expo-router";
 import * as Location from "expo-location";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-  Animated,
-  Image,
-  Pressable,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Animated, Image, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getCoinBalance } from "@/api/coins";
 import {
   getTodayMovements,
   getTotalMovements,
+  TodayMovementResponse,
   TotalMovementResponse,
 } from "@/api/movements";
 import { getProfile, ProfileResponse } from "@/api/profile";
@@ -116,9 +110,11 @@ function calculateDistanceKm(fromPoint: TripPoint, toPoint: TripPoint) {
 }
 
 export default function HomeScreen() {
-  const { logoutUser } = useAuth();
+  const { isLoggedIn, logoutUser } = useAuth();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [todayMovement, setTodayMovement] =
+    useState<TodayMovementResponse | null>(null);
   const [totalMovement, setTotalMovement] =
     useState<TotalMovementResponse | null>(null);
   const [isMovementLoading, setIsMovementLoading] = useState(true);
@@ -188,6 +184,7 @@ export default function HomeScreen() {
     setProfile(null);
     setTodayMovement(null);
     setTotalMovement(null);
+    setCoinBalance(null);
   }
 
   const DEFAULT_MAP_CENTER: TripPoint = {
@@ -419,6 +416,7 @@ export default function HomeScreen() {
           ]);
 
         setProfile(profileResult);
+        setTodayMovement(movementResult);
         setTotalMovement(totalMovementResult);
         setCoinBalance(coinResult.balance);
 
@@ -431,6 +429,7 @@ export default function HomeScreen() {
       } catch (error) {
         console.error("ホームデータ取得に失敗しました", error);
         setProfile(null);
+        setTodayMovement(null);
         setTotalMovement(null);
         setCoinBalance(null);
       } finally {
@@ -460,7 +459,7 @@ export default function HomeScreen() {
         }
       }
       refreshProfile();
-    }, [])
+    }, []),
   );
 
   useEffect(() => {
@@ -591,7 +590,7 @@ export default function HomeScreen() {
               <ThemedText style={styles.distanceText}>...</ThemedText>
             ) : (
               <ThemedText style={styles.distanceText}>
-                  {displayedRealDistanceKm.toFixed(1)}
+                {displayedRealDistanceKm.toFixed(1)}
               </ThemedText>
             )}
 

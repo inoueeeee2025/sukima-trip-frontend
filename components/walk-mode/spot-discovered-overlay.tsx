@@ -1,4 +1,3 @@
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -13,6 +12,8 @@ import {
 import { likeSpot, unlikeSpot } from "@/api/spots";
 import { getAccessToken } from "@/components/auth/auth-storage";
 import { ThemedText } from "@/components/themed-text";
+
+const spotDiscoveredBanner = require("@/assets/images/walk-mode/spot-discovered-banner.png");
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH * 0.86;
@@ -62,12 +63,11 @@ export function SpotDiscoveredOverlay({
   return (
     <View style={styles.overlay}>
       {/* スポット発見！バナー */}
-      <View style={styles.discoveredBanner}>
-        <ThemedText style={styles.discoveredBannerText}>スポット発見！</ThemedText>
-        <View style={styles.flagIconCircle}>
-          <MaterialIcons name="flag" size={22} color="#C8A820" />
-        </View>
-      </View>
+      <Image
+        source={spotDiscoveredBanner}
+        style={styles.discoveredBanner}
+        resizeMode="stretch"
+      />
 
       {/* スポットカード */}
       <ScrollView
@@ -144,28 +144,8 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   discoveredBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#C8A820",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  discoveredBannerText: {
-    color: "#ffffff",
-    fontSize: 20,
-    fontWeight: "800",
-    fontFamily: "MochiyPopOne",
-  },
-  flagIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2.5,
-    borderColor: "#C8A820",
-    backgroundColor: "#ffffff",
-    alignItems: "center",
-    justifyContent: "center",
+    width: "100%",
+    height: 56,
   },
   cardScroll: {
     flex: 1,
@@ -209,22 +189,21 @@ const styles = StyleSheet.create({
   },
   nameBanner: {
     position: "absolute",
-    top: 12,
-    left: 52,
-    right: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     backgroundColor: "rgba(50, 42, 28, 0.88)",
-    borderRadius: 5,
   },
   spotName: {
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
     color: "#ffffff",
   },
   heartButton: {
     position: "absolute",
-    bottom: 12,
+    top: 12,
     right: 12,
     width: 40,
     height: 40,

@@ -36,25 +36,21 @@ export function WalkModeScreen({
 }: WalkModeScreenProps) {
   const [isNearestSpotCardOpen, setIsNearestSpotCardOpen] = useState(true);
   const [nearestSpot, setNearestSpot] = useState<NearestSpotResponse | null>(null);
-  const lastFetchPositionRef = useRef<{ lat: number; lng: number } | null>(null);
+  const lastFetchTimeRef = useRef<number>(0);
 
   useEffect(() => {
-    async function fetchNearestSpot() {
-      const last = lastFetchPositionRef.current;
-      if (last) {
-        const dlat = (latitude - last.lat) * 111;
-        const dlng = (longitude - last.lng) * 111 * Math.cos((latitude * Math.PI) / 180);
-        const movedKm = Math.sqrt(dlat * dlat + dlng * dlng);
-        if (movedKm < 0.5) return;
-      }
+    const now = Date.now();
+    if (now - lastFetchTimeRef.current < 3000) return;
 
+    lastFetchTimeRef.current = now;
+
+    async function fetchNearestSpot() {
       const token = await getAccessToken();
       if (!token) return;
 
       try {
         const result = await getNearestSpot(latitude, longitude, token);
         setNearestSpot(result);
-        lastFetchPositionRef.current = { lat: latitude, lng: longitude };
       } catch {
         // 取得失敗時は前回の値を維持
       }

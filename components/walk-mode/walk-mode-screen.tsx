@@ -55,7 +55,6 @@ export function WalkModeScreen({
     try {
       const result = await getNearestSpot(lat, lng, token);
       setNearestSpot(result);
-      console.log(`[NearestSpot] ${result.name}: ${result.distance_km.toFixed(3)}km`);
 
       if (result.distance_km < 0.2 && !arrivedPlaceIdsRef.current.has(result.place_id)) {
         arrivedPlaceIdsRef.current.add(result.place_id);

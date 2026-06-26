@@ -304,6 +304,30 @@ export default function HomeScreen() {
     loadHomeData();
   }, []); //ホーム画面が開いた時にプロフィール取得が走る、tokenを読んで/profileを叩く、結果をprofile　stateに入れる
 
+  useEffect(() => {
+    if (!isDashboardOpen) return;
+
+    async function refreshDashboardData() {
+      const token = await getAccessToken();
+      if (!token) return;
+      try {
+        const [movementResult, totalMovementResult, coinResult] =
+          await Promise.all([
+            getTodayMovements(token),
+            getTotalMovements(token),
+            getCoinBalance(token),
+          ]);
+        setTodayMovement(movementResult);
+        setTotalMovement(totalMovementResult);
+        setCoinBalance(coinResult.balance);
+      } catch (error) {
+        console.error("ダッシュボードデータ取得に失敗しました", error);
+      }
+    }
+
+    refreshDashboardData();
+  }, [isDashboardOpen]);
+
   const isFirstMount = useRef(true);
   useFocusEffect(
     useCallback(() => {

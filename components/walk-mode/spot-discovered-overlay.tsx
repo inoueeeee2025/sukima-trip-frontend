@@ -1,3 +1,4 @@
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -90,7 +91,7 @@ export function SpotDiscoveredOverlay({
               </View>
 
               <Pressable
-                style={[styles.heartButton, !liked && styles.heartButtonInactive]}
+                style={[styles.heartButton, liked && styles.heartButtonLiked]}
                 onPress={toggleLike}
                 disabled={isLiking}
                 accessibilityRole="button"
@@ -99,9 +100,11 @@ export function SpotDiscoveredOverlay({
                 {isLiking ? (
                   <ActivityIndicator size="small" color={liked ? "#ffffff" : "#e74c3c"} />
                 ) : (
-                  <ThemedText style={[styles.heartIcon, !liked && styles.heartIconInactive]}>
-                    {liked ? "♥" : "♡"}
-                  </ThemedText>
+                  <MaterialIcons
+                    name={liked ? "favorite" : "favorite-border"}
+                    size={22}
+                    color={liked ? "#ffffff" : "#e74c3c"}
+                  />
                 )}
               </Pressable>
             </View>
@@ -207,21 +210,15 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#e74c3c",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heartButtonInactive: {
     backgroundColor: "#ffffff",
     borderWidth: 1.5,
     borderColor: "#e74c3c",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  heartIcon: {
-    fontSize: 20,
-    color: "#ffffff",
-  },
-  heartIconInactive: {
-    color: "#e74c3c",
+  heartButtonLiked: {
+    backgroundColor: "#e74c3c",
+    borderColor: "#e74c3c",
   },
   infoArea: {
     padding: 14,

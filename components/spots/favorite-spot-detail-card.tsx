@@ -58,12 +58,9 @@ export function FavoriteSpotDetailCard({
             disabled={isLiking}
           >
             {isLiking ? (
-              <ActivityIndicator size="small" color="#cccccc" />
+              <ActivityIndicator size="small" color="#ffffff" />
             ) : (
-              <Image
-                source={require("@/assets/images/spots/like-icon.png")}
-                style={[styles.heartIcon, !liked && styles.heartIconInactive]}
-              />
+              <Text style={styles.heartIcon}>♥</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -137,22 +134,13 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#e74c3c",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
   },
   heartIcon: {
-    width: 22,
-    height: 22,
-    resizeMode: "contain",
-  },
-  heartIconInactive: {
-    opacity: 0.35,
+    fontSize: 20,
+    color: "#ffffff",
   },
   bottomArea: {
     height: 100,

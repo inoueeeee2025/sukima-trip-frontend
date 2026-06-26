@@ -16,6 +16,7 @@ type StreetViewPanelProps = {
   onStatusChange?: (status: StreetViewStatus) => void;
   onPositionChange?: (position: StreetViewPosition) => void;
   onAddressChange?: (address: string) => void;
+  onHeadingChange?: (heading: number) => void;
 };
 
 export type StreetViewStatus =
@@ -31,6 +32,7 @@ export function StreetViewPanel({
   onStatusChange,
   onPositionChange,
   onAddressChange,
+  onHeadingChange,
 }: StreetViewPanelProps) {
   const WebViewRef = useRef<WebView>(null);
 
@@ -172,6 +174,16 @@ function notifyAddress(position) {
   notifyAddress(currentPosition);
 });
 
+              panorama.addListener("pov_changed", function() {
+                const pov = panorama.getPov();
+                window.ReactNativeWebView.postMessage(
+                  JSON.stringify({
+                    type: "streetViewHeadingChanged",
+                    heading: pov.heading
+                  })
+                );
+              });
+
 // 初回表示では position_changed が発火しない場合があるため、
 // panorama作成時の位置でも住所取得を走らせる
 notifyAddress(position);
@@ -265,6 +277,11 @@ return;
             latitude: data.latitude,
             longitude: data.longitude,
           });
+          return;
+        }
+
+        if (data.type === "streetViewHeadingChanged") {
+          onHeadingChange?.(data.heading);
         }
       }}
     />

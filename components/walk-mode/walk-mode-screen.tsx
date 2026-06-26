@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Image, ImageBackground, Pressable, StyleSheet, View } from "react-native";
-import * as Location from "expo-location";
 
 import { getNearestSpot, type NearestSpotResponse } from "@/api/spots";
 import { getAccessToken } from "@/components/auth/auth-storage";
@@ -37,23 +36,9 @@ export function WalkModeScreen({
 }: WalkModeScreenProps) {
   const [isNearestSpotCardOpen, setIsNearestSpotCardOpen] = useState(true);
   const [nearestSpot, setNearestSpot] = useState<NearestSpotResponse | null>(null);
-  const [deviceHeading, setDeviceHeading] = useState(0);
+  const [streetViewHeading, setStreetViewHeading] = useState(0);
   const lastFetchTimeRef = useRef<number>(0);
   const latestPositionRef = useRef<{ lat: number; lng: number }>({ lat: latitude, lng: longitude });
-
-  useEffect(() => {
-    let subscription: Location.LocationSubscription | null = null;
-
-    async function startHeadingWatch() {
-      subscription = await Location.watchHeadingAsync((heading) => {
-        const h = heading.trueHeading >= 0 ? heading.trueHeading : heading.magHeading;
-        setDeviceHeading(h);
-      });
-    }
-
-    startHeadingWatch();
-    return () => { subscription?.remove(); };
-  }, []);
 
   async function fetchNearestSpot(lat: number, lng: number) {
     const now = Date.now();
@@ -91,6 +76,7 @@ export function WalkModeScreen({
           fetchNearestSpot(position.latitude, position.longitude);
           onPositionChange(position);
         }}
+        onHeadingChange={setStreetViewHeading}
         onAddressChange={onAddressChange}
       />
 
@@ -123,7 +109,7 @@ export function WalkModeScreen({
               {
                 transform: [
                   {
-                    rotate: `${((nearestSpot?.bearing ?? 0) - deviceHeading + 360) % 360}deg`,
+                    rotate: `${((nearestSpot?.bearing ?? 0) - streetViewHeading + 360) % 360}deg`,
                   },
                 ],
               },

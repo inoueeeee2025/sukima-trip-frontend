@@ -43,19 +43,23 @@ export function SpotDiscoveredOverlay({
 
   async function toggleLike() {
     if (isLiking) return;
+    const newLiked = !liked;
+    setLiked(newLiked);
     setIsLiking(true);
     try {
       const token = await getAccessToken();
-      if (!token) return;
-      if (liked) {
-        await unlikeSpot(placeId, token);
-        setLiked(false);
-      } else {
-        await likeSpot(placeId, spotName, token);
-        setLiked(true);
+      if (!token) {
+        setLiked(!newLiked);
+        return;
       }
-    } catch {
-      // keep current state on error
+      if (newLiked) {
+        await likeSpot(placeId, spotName, token);
+      } else {
+        await unlikeSpot(placeId, token);
+      }
+    } catch (e) {
+      setLiked(!newLiked);
+      console.error("[toggleLike] failed:", e);
     } finally {
       setIsLiking(false);
     }

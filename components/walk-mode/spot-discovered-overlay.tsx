@@ -144,6 +144,7 @@ const styles = StyleSheet.create({
   },
   discoveredBanner: {
     alignSelf: "flex-end",
+    transform: [{ scale: 0.75 }],
   },
   cardScroll: {
     flex: 1,

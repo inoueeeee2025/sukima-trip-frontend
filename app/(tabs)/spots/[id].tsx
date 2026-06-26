@@ -49,7 +49,7 @@ export default function SpotDetailScreen() {
         await unlikeSpot(id, token);
         setLiked(false);
       } else {
-        await likeSpot(id, name ?? id, token);
+        await likeSpot(id, name ?? id, photoUrl ?? "", "", token);
         setLiked(true);
       }
     } catch {

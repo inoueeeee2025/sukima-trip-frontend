@@ -5,17 +5,10 @@ export type Favorite = {
   user_id: string;
   place_id: string;
   name: string;
-  latitude: number;
-  longitude: number;
   created_at: string;
   coin_amount: number;
-};
-
-export type SaveFavoriteRequest = {
-  place_id: string;
-  place_name: string;
-  latitude: number;
-  longitude: number;
+  description: string;
+  photo_url: string;
 };
 
 export function getFavorites(accessToken: string) {
@@ -24,13 +17,6 @@ export function getFavorites(accessToken: string) {
   });
 }
 
-export function saveFavorite(body: SaveFavoriteRequest, accessToken: string) {
-  return apiRequest<{ message: string }>("/favorites", {
-    method: "POST",
-    body,
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-}
 
 export function deleteFavorite(id: string, accessToken: string) {
   return apiRequest<{ message: string }>(`/favorites/${id}`, {

@@ -53,7 +53,7 @@ export function SpotDiscoveredOverlay({
         return;
       }
       if (newLiked) {
-        await likeSpot(placeId, spotName, token);
+        await likeSpot(placeId, spotName, photoUrl, wikiSummary, token);
       } else {
         await unlikeSpot(placeId, token);
       }

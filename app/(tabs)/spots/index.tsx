@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -15,7 +15,6 @@ import {
 } from "react-native";
 
 
-import { getPlaceFirstPhotoUrl } from "@/api/places";
 import { deleteFavorite, Favorite, getFavorites } from "@/api/favorites";
 import { getAccessToken } from "@/components/auth/auth-storage";
 import { FavoriteSpotDetailCard } from "@/components/spots/favorite-spot-detail-card";
@@ -31,8 +30,6 @@ export default function FavoriteSpotsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<Favorite | null>(null);
-  const [detailPhotoUrl, setDetailPhotoUrl] = useState<string | null>(null);
-  const [isDetailPhotoLoading, setIsDetailPhotoLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useFocusEffect(
@@ -41,23 +38,6 @@ export default function FavoriteSpotsScreen() {
     }, [])
   );
 
-  useEffect(() => {
-    if (!selectedItem) {
-      setDetailPhotoUrl(null);
-      setIsDetailPhotoLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setIsDetailPhotoLoading(true);
-    setDetailPhotoUrl(null);
-    getPlaceFirstPhotoUrl(selectedItem.place_id).then((url) => {
-      if (!cancelled) {
-        setDetailPhotoUrl(url);
-        setIsDetailPhotoLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [selectedItem]);
 
   async function load() {
     try {
@@ -151,7 +131,11 @@ export default function FavoriteSpotsScreen() {
                   style={styles.photoArea}
                   onPress={() => setSelectedItem(item)}
                 >
-                  <View style={styles.photoPlaceholder} />
+                  {item.photo_url ? (
+                    <Image source={{ uri: item.photo_url }} style={styles.photoPlaceholder} resizeMode="cover" />
+                  ) : (
+                    <View style={styles.photoPlaceholder} />
+                  )}
                   {/* スポット名バナー：写真上にオーバーレイ */}
                   <View style={styles.nameBanner}>
                     <Text style={styles.spotName} numberOfLines={1}>
@@ -202,8 +186,8 @@ export default function FavoriteSpotsScreen() {
               <FavoriteSpotDetailCard
                 name={selectedItem.name}
                 coinAmount={selectedItem.coin_amount ?? 0}
-                photoUrl={detailPhotoUrl}
-                isPhotoLoading={isDetailPhotoLoading}
+                photoUrl={selectedItem.photo_url || null}
+                isPhotoLoading={false}
                 liked={true}
                 isLiking={deletingId === selectedItem?.id}
                 onHeartPress={() => handleToggleLike(selectedItem)}

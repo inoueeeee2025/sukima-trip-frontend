@@ -47,10 +47,16 @@ export function arriveAtSpot(placeId: string, body: ArriveRequest, accessToken: 
   });
 }
 
-export function likeSpot(placeId: string, placeName: string, accessToken: string) {
+export function likeSpot(
+  placeId: string,
+  placeName: string,
+  photoUrl: string,
+  description: string,
+  accessToken: string,
+) {
   return apiRequest<{ message: string }>(`/spots/${placeId}/like`, {
     method: "POST",
-    body: { place_name: placeName },
+    body: { place_name: placeName, photo_url: photoUrl, description },
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 }

@@ -89,6 +89,7 @@ const INITIAL_WALK_SESSION: WalkSessionState = {
 };
 
 const VIRTUAL_DISTANCE_FINISH_THRESHOLD_KM = 0.5;
+const VIRTUAL_DISTANCE_MULTIPLIER = 5;
 
 function calculateDistanceKm(fromPoint: TripPoint, toPoint: TripPoint) {
   const earthRadiusKm = 6371;
@@ -136,6 +137,8 @@ export default function HomeScreen() {
   const [streetViewRollbackPosition, setStreetViewRollbackPosition] =
     useState<StreetViewPosition | null>(null);
   const [isWalkFinishedModalOpen, setIsWalkFinishedModalOpen] = useState(false);
+  // ×ボタンでいきなり終了せず、まず確認ダイアログを出すための状態
+  const [isWalkExitConfirmOpen, setIsWalkExitConfirmOpen] = useState(false);
   // Street Viewが見つからなかった時の文言を、Home(map)2上に出すために保持する
   const [streetViewUnavailableMessage, setStreetViewUnavailableMessage] =
     useState<string | null>(null);
@@ -158,15 +161,18 @@ export default function HomeScreen() {
   const hasSelectedLandingPoint = selectedLandingPoint !== null;
 
   const availableVirtualDistanceKm =
-    virtualTrip.totalVirtualDistanceKm + walkSession.realDistanceKm * 10;
+    virtualTrip.totalVirtualDistanceKm +
+    walkSession.realDistanceKm * VIRTUAL_DISTANCE_MULTIPLIER;
 
   const remainingVirtualDistanceKm = Math.max(
     availableVirtualDistanceKm - virtualTrip.usedVirtualDistanceKm,
     0,
   );
 
-  const displayedHeldRealDistanceKm = remainingVirtualDistanceKm / 10;
-
+ const displayedHeldRealDistanceKm =
+  remainingVirtualDistanceKm <= VIRTUAL_DISTANCE_FINISH_THRESHOLD_KM
+    ? 0
+    : remainingVirtualDistanceKm / VIRTUAL_DISTANCE_MULTIPLIER;
   const hasUsedAllVirtualDistance =
     isWalkMode &&
     remainingVirtualDistanceKm <= VIRTUAL_DISTANCE_FINISH_THRESHOLD_KM;
@@ -264,9 +270,18 @@ export default function HomeScreen() {
     setSelectedLandingPoint(null);
   }
 
-  function handleExitWalkMode() {
+  function handleRequestExitWalkMode() {
+    setIsWalkExitConfirmOpen(true);
+  }
+
+  function handleConfirmExitWalkMode() {
+    setIsWalkExitConfirmOpen(false);
     setIsWalkMode(false);
     setIsExploreMode(true);
+  }
+
+  function handleCancelExitWalkMode() {
+    setIsWalkExitConfirmOpen(false);
   }
 
   function handleCloseWalkFinishedModal() {
@@ -334,7 +349,8 @@ export default function HomeScreen() {
       );
 
       const availableDistanceKm =
-        current.totalVirtualDistanceKm + walkSession.realDistanceKm * 10;
+        current.totalVirtualDistanceKm +
+        walkSession.realDistanceKm * VIRTUAL_DISTANCE_MULTIPLIER;
 
       const remainingDistanceKm = Math.max(
         availableDistanceKm - current.usedVirtualDistanceKm,
@@ -557,8 +573,39 @@ export default function HomeScreen() {
             }}
             onPositionChange={handleStreetViewPositionChange}
             onAddressChange={setStreetViewAddress}
-            onExit={handleExitWalkMode}
+            onExit={handleRequestExitWalkMode}
           />
+
+          {isWalkExitConfirmOpen ? (
+            <View style={styles.walkExitConfirmOverlay}>
+              <View style={styles.walkExitConfirmCard}>
+                <ThemedText style={styles.walkExitConfirmTitle}>
+                  探索を終了しますか？
+                </ThemedText>
+              
+
+                <View style={styles.walkExitConfirmActions}>
+                  <Pressable
+                    style={styles.walkExitCancelButton}
+                    onPress={handleCancelExitWalkMode}
+                  >
+                    <ThemedText style={styles.walkExitCancelButtonText}>
+                      続ける
+                    </ThemedText>
+                  </Pressable>
+
+                  <Pressable
+                    style={styles.walkExitConfirmButton}
+                    onPress={handleConfirmExitWalkMode}
+                  >
+                    <ThemedText style={styles.walkExitConfirmButtonText}>
+                      終了する
+                    </ThemedText>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          ) : null}
 
           {isWalkFinishedModalOpen || hasUsedAllVirtualDistance ? (
             <View style={styles.walkFinishedOverlay}>
@@ -1111,6 +1158,60 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   walkFinishedButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  walkExitConfirmOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 45,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
+  },
+  walkExitConfirmCard: {
+    width: "80%",
+    paddingHorizontal: 22,
+    paddingVertical: 20,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    alignItems: "center",
+  },
+  walkExitConfirmTitle: {
+    color: "#333333",
+    fontSize: 20,
+    fontWeight: "800",
+  },
+
+  walkExitConfirmActions: {
+    marginTop: 18,
+    flexDirection: "row",
+    gap: 12,
+  },
+  walkExitCancelButton: {
+    minWidth: 104,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#9e171a",
+    alignItems: "center",
+  },
+  walkExitCancelButtonText: {
+    color: "#9e171a",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  walkExitConfirmButton: {
+    minWidth: 104,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    backgroundColor: "#9e171a",
+    alignItems: "center",
+  },
+  walkExitConfirmButtonText: {
     color: "#ffffff",
     fontSize: 14,
     fontWeight: "800",

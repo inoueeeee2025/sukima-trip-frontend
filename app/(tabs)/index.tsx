@@ -127,7 +127,7 @@ export default function HomeScreen() {
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   // setter は #62（バックエンドに座標追加）対応後に使用予定
   const [visitedRoute] = useState<VisitedRoutePoint[]>([]);
-  // 探索中だけ増える一時的な距離データ。保存済みのtodayMovementとは分けて扱う
+  // アプリ起動中だけ増える一時的な距離データ。保存済みのtodayMovementとは分けて扱う
   const [walkSession, setWalkSession] =
     useState<WalkSessionState>(INITIAL_WALK_SESSION);
   const [isExploreMode, setIsExploreMode] = useState(false);
@@ -161,8 +161,11 @@ export default function HomeScreen() {
   const displayedRealDistanceKm =
     (todayMovement?.real_distance_km ?? 0) + walkSession.realDistanceKm;
 
+  const availableVirtualDistanceKm =
+    virtualTrip.totalVirtualDistanceKm + walkSession.realDistanceKm * 10;
+
   const remainingVirtualDistanceKm = Math.max(
-    virtualTrip.totalVirtualDistanceKm - virtualTrip.usedVirtualDistanceKm,
+    availableVirtualDistanceKm - virtualTrip.usedVirtualDistanceKm,
     0,
   );
 
@@ -294,14 +297,6 @@ export default function HomeScreen() {
     });
   }
 
-  function handleStartWalkSession() {
-    setWalkSession({
-      ...INITIAL_WALK_SESSION,
-      isActive: true,
-      startedAt: new Date().toISOString(),
-    });
-  }
-
   function handleStreetViewPositionChange(position: StreetViewPosition) {
     setVirtualTrip((current) => {
       if (!current.currentPoint) {
@@ -348,6 +343,25 @@ export default function HomeScreen() {
       };
     });
   }
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setWalkSession(INITIAL_WALK_SESSION);
+      return;
+    }
+
+    setWalkSession((current) => {
+      if (current.isActive) {
+        return current;
+      }
+
+      return {
+        ...INITIAL_WALK_SESSION,
+        isActive: true,
+        startedAt: new Date().toISOString(),
+      };
+    });
+  }, [isLoggedIn]);
 
   useEffect(() => {
     if (!walkSession.isActive) {

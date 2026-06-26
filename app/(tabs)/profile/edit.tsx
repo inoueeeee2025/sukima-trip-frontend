@@ -17,20 +17,9 @@ import {
 import { getProfile, updateProfile, uploadAvatar } from "@/api/profile";
 import { getAccessToken } from "@/components/auth/auth-storage";
 import { AppColors } from "@/constants/theme";
+import { GenderLabel, GENDERS, GENDER_VALUES, GENDER_LABELS } from "@/constants/gender";
 
-type Gender = "男性" | "女性" | "その他";
-
-const GENDERS: Gender[] = ["男性", "女性", "その他"];
-const GENDER_VALUES: Record<Gender, string> = {
-  男性: "male",
-  女性: "female",
-  その他: "other",
-};
-const GENDER_LABELS: Record<string, Gender> = {
-  male: "男性",
-  female: "女性",
-  other: "その他",
-};
+type Gender = GenderLabel;
 
 export default function ProfileEditScreen() {
   const [name, setName] = useState("");

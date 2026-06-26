@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { TotalMovementResponse } from "@/api/movements";
 import { ThemedText } from "@/components/themed-text";
+import { GENDER_LABELS } from "@/constants/gender";
 
 type DashboardPassportProps = {
   totalMovement: TotalMovementResponse | null;
@@ -81,7 +82,7 @@ export function DashboardPassport({
               </View>
               <View style={styles.profileField}>
                 <ThemedText style={styles.profileLabel}>性別</ThemedText>
-                <ThemedText style={styles.profileValue}>{gender || "未設定"}</ThemedText>
+                <ThemedText style={styles.profileValue}>{(gender && GENDER_LABELS[gender]) || gender || "未設定"}</ThemedText>
               </View>
             </View>
 

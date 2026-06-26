@@ -14,6 +14,15 @@ export type TotalMovementResponse = {
   total_real_distance_km: number;
 };
 
+type UpdateTodayMovementInput = {
+  real_distance_km: number;
+  used_virtual_distance_km: number;
+};
+
+type UpdateTodayMovementResponse = {
+  message: string;
+};
+
 //今日の移動データを取得する関数
 export function getTodayMovements(accessToken: string){
   return apiRequest<TodayMovementResponse>("/movements/today",{
@@ -21,6 +30,19 @@ export function getTodayMovements(accessToken: string){
     headers: {
       Authorization: `Bearer ${accessToken}`,
     }
+  });
+}
+
+export function updateTodayMovement(
+  input: UpdateTodayMovementInput,
+  accessToken: string,
+) {
+  return apiRequest<UpdateTodayMovementResponse>("/movements/today", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: input,
   });
 }
 
@@ -33,4 +55,3 @@ export function getTotalMovements(accessToken: string){
     }
   })
 }
-

@@ -13,6 +13,7 @@ export type StreetViewPosition = {
 type StreetViewPanelProps = {
   latitude: number;
   longitude: number;
+  rollbackPosition?: StreetViewPosition | null;
   onStatusChange?: (status: StreetViewStatus) => void;
   onPositionChange?: (position: StreetViewPosition) => void;
   onAddressChange?: (address: string) => void;
@@ -29,6 +30,7 @@ export type StreetViewStatus =
 export function StreetViewPanel({
   latitude,
   longitude,
+  rollbackPosition,
   onStatusChange,
   onPositionChange,
   onAddressChange,
@@ -44,6 +46,22 @@ export function StreetViewPanel({
       true;
     `);
   }, [latitude, longitude]);
+
+  useEffect(() => {
+    if (!rollbackPosition) {
+      return;
+    }
+
+    WebViewRef.current?.injectJavaScript(`
+      if (window.rollbackStreetViewPosition) {
+        window.rollbackStreetViewPosition(
+          ${rollbackPosition.latitude},
+          ${rollbackPosition.longitude}
+        );
+      }
+      true;
+    `);
+  }, [rollbackPosition]);
 
   if (!GOOGLE_MAPS_API_KEY) {
     return (
@@ -245,6 +263,14 @@ return;
 
           window.updateStreetViewPosition = function(lat, lng) {
             showNearestStreetView(lat, lng);
+          };
+
+          window.rollbackStreetViewPosition = function(lat, lng) {
+            if (!panorama) {
+              return;
+            }
+
+            panorama.setPosition({ lat: lat, lng: lng });
           };
 
         initStreetView();

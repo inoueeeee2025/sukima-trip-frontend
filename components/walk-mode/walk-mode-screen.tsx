@@ -60,18 +60,22 @@ export function WalkModeScreen({
     try {
       const result = await getNearestSpot(lat, lng, token);
       setNearestSpot(result);
+      console.log(`[NearestSpot] ${result.name}: ${result.distance_km.toFixed(3)}km (threshold: ${ARRIVAL_THRESHOLD_KM}km), arrived: ${arrivedPlaceIdsRef.current.has(result.place_id)}`);
 
       if (result.distance_km < ARRIVAL_THRESHOLD_KM && !arrivedPlaceIdsRef.current.has(result.place_id)) {
         arrivedPlaceIdsRef.current.add(result.place_id);
         setIsArriving(true);
         try {
+          console.log(`[arriveAtSpot] calling: ${result.place_id}`);
           const arrived = await arriveAtSpot(
             result.place_id,
             { place_name: result.name },
             token
           );
+          console.log("[arriveAtSpot] success:", arrived);
           setDiscoveredSpot({ ...arrived, spotName: result.name, placeId: result.place_id });
         } catch (arriveError) {
+          console.error("[arriveAtSpot] failed:", arriveError);
           const isAlreadyArrived =
             arriveError instanceof Error && arriveError.message.includes("到着済み");
           if (!isAlreadyArrived) {

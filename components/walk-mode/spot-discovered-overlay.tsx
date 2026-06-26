@@ -14,6 +14,8 @@ import { likeSpot, unlikeSpot } from "@/api/spots";
 import { getAccessToken } from "@/components/auth/auth-storage";
 import { ThemedText } from "@/components/themed-text";
 
+const spotDiscoveredBanner = require("@/assets/images/walk-mode/spot-discovered-banner.png");
+
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH * 0.86;
 
@@ -41,19 +43,23 @@ export function SpotDiscoveredOverlay({
 
   async function toggleLike() {
     if (isLiking) return;
+    const newLiked = !liked;
+    setLiked(newLiked);
     setIsLiking(true);
     try {
       const token = await getAccessToken();
-      if (!token) return;
-      if (liked) {
-        await unlikeSpot(placeId, token);
-        setLiked(false);
-      } else {
-        await likeSpot(placeId, spotName, token);
-        setLiked(true);
+      if (!token) {
+        setLiked(!newLiked);
+        return;
       }
-    } catch {
-      // keep current state on error
+      if (newLiked) {
+        await likeSpot(placeId, spotName, photoUrl, wikiSummary, token);
+      } else {
+        await unlikeSpot(placeId, token);
+      }
+    } catch (e) {
+      setLiked(!newLiked);
+      console.error("[toggleLike] failed:", e);
     } finally {
       setIsLiking(false);
     }
@@ -62,12 +68,10 @@ export function SpotDiscoveredOverlay({
   return (
     <View style={styles.overlay}>
       {/* スポット発見！バナー */}
-      <View style={styles.discoveredBanner}>
-        <ThemedText style={styles.discoveredBannerText}>スポット発見！</ThemedText>
-        <View style={styles.flagIconCircle}>
-          <MaterialIcons name="flag" size={22} color="#C8A820" />
-        </View>
-      </View>
+      <Image
+        source={spotDiscoveredBanner}
+        style={styles.discoveredBanner}
+      />
 
       {/* スポットカード */}
       <ScrollView
@@ -91,7 +95,7 @@ export function SpotDiscoveredOverlay({
               </View>
 
               <Pressable
-                style={[styles.heartButton, !liked && styles.heartButtonInactive]}
+                style={[styles.heartButton, liked && styles.heartButtonLiked]}
                 onPress={toggleLike}
                 disabled={isLiking}
                 accessibilityRole="button"
@@ -100,9 +104,11 @@ export function SpotDiscoveredOverlay({
                 {isLiking ? (
                   <ActivityIndicator size="small" color={liked ? "#ffffff" : "#e74c3c"} />
                 ) : (
-                  <ThemedText style={[styles.heartIcon, !liked && styles.heartIconInactive]}>
-                    {liked ? "♥" : "♡"}
-                  </ThemedText>
+                  <MaterialIcons
+                    name={liked ? "favorite" : "favorite-border"}
+                    size={22}
+                    color={liked ? "#ffffff" : "#e74c3c"}
+                  />
                 )}
               </Pressable>
             </View>
@@ -119,17 +125,17 @@ export function SpotDiscoveredOverlay({
             <ThemedText style={styles.coinBadgeText}>{coinEarned}</ThemedText>
           </View>
         </View>
-      </ScrollView>
 
-      {/* ボタンエリア */}
-      <View style={styles.buttonRow}>
-        <Pressable style={styles.exitButton} onPress={onExit}>
-          <ThemedText style={styles.exitButtonText}>終了する</ThemedText>
-        </Pressable>
-        <Pressable style={styles.continueButton} onPress={onContinue}>
-          <ThemedText style={styles.continueButtonText}>続ける</ThemedText>
-        </Pressable>
-      </View>
+        {/* ボタンエリア（カード直下） */}
+        <View style={styles.buttonRow}>
+          <Pressable style={styles.exitButton} onPress={onExit}>
+            <ThemedText style={styles.exitButtonText}>終了する</ThemedText>
+          </Pressable>
+          <Pressable style={styles.continueButton} onPress={onContinue}>
+            <ThemedText style={styles.continueButtonText}>続ける</ThemedText>
+          </Pressable>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -144,28 +150,8 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   discoveredBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#C8A820",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  discoveredBannerText: {
-    color: "#ffffff",
-    fontSize: 20,
-    fontWeight: "800",
-    fontFamily: "MochiyPopOne",
-  },
-  flagIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2.5,
-    borderColor: "#C8A820",
-    backgroundColor: "#ffffff",
-    alignItems: "center",
-    justifyContent: "center",
+    alignSelf: "flex-end",
+    transform: [{ scale: 0.75 }],
   },
   cardScroll: {
     flex: 1,
@@ -209,41 +195,34 @@ const styles = StyleSheet.create({
   },
   nameBanner: {
     position: "absolute",
-    top: 12,
-    left: 52,
-    right: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     backgroundColor: "rgba(50, 42, 28, 0.88)",
-    borderRadius: 5,
   },
   spotName: {
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
     color: "#ffffff",
   },
   heartButton: {
     position: "absolute",
-    bottom: 12,
+    top: 12,
     right: 12,
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#e74c3c",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heartButtonInactive: {
     backgroundColor: "#ffffff",
     borderWidth: 1.5,
     borderColor: "#e74c3c",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  heartIcon: {
-    fontSize: 20,
-    color: "#ffffff",
-  },
-  heartIconInactive: {
-    color: "#e74c3c",
+  heartButtonLiked: {
+    backgroundColor: "#e74c3c",
+    borderColor: "#e74c3c",
   },
   infoArea: {
     padding: 14,
@@ -280,30 +259,28 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: "row",
-    gap: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    gap: 12,
+    width: CARD_WIDTH,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   exitButton: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    borderRadius: 999,
+    backgroundColor: "#555555",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#aaaaaa",
   },
   exitButtonText: {
-    color: "#333333",
+    color: "#ffffff",
     fontSize: 16,
     fontWeight: "700",
   },
   continueButton: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: 10,
-    backgroundColor: "#43A958",
+    borderRadius: 999,
+    backgroundColor: "#9B1C1C",
     alignItems: "center",
   },
   continueButtonText: {

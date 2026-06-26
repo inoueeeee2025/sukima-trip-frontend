@@ -1,9 +1,11 @@
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Image, Pressable, StyleSheet, View } from "react-native";
 import { useState } from "react";
 
 import { TotalMovementResponse } from "@/api/movements";
 import { ThemedText } from "@/components/themed-text";
 import { GENDER_LABELS } from "@/constants/gender";
+import { AppColors } from "@/constants/theme";
 
 type DashboardPassportProps = {
   totalMovement: TotalMovementResponse | null;
@@ -100,8 +102,15 @@ export function DashboardPassport({
         <ThemedText style={styles.profileEditText}>プロフィール変更</ThemedText>
       </Pressable>
 
-      <Pressable style={styles.logoutButton} onPress={onLogout}>
-        <ThemedText style={styles.logoutText}>ログアウト</ThemedText>
+      {/* ログアウトボタン：パスポート右上に絶対配置（レイアウトに影響しない） */}
+      <Pressable
+        style={styles.logoutButton}
+        onPress={onLogout}
+        accessibilityRole="button"
+        accessibilityLabel="ログアウト"
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <MaterialIcons name="exit-to-app" size={20} color={AppColors.inputBorder} />
       </Pressable>
     </View>
   );
@@ -112,7 +121,7 @@ const styles = StyleSheet.create({
     width: "88%",
     maxWidth: 380,
     alignItems: "center",
-    gap: 12,
+    gap: 4,
     zIndex: 1,
   },
   dashboardPassportImage: {
@@ -235,34 +244,31 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSerifJP",
   },
   profileEditButton: {
-    marginTop: 8,
-    width: "56%",
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#9e171a",
+    width: "46%",
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: AppColors.inputBorder,
     backgroundColor: "#fff4c9",
     alignItems: "center",
     zIndex: 1,
   },
   profileEditText: {
     color: "#111111",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "700",
     fontFamily: "NotoSerifJP",
   },
   logoutButton: {
-    width: "52%",
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    position: "absolute",
+    top: 19,
+    right: 18,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.6)",
     alignItems: "center",
-    zIndex: 1,
-  },
-  logoutText: {
-    color: "#9e171a",
-    fontSize: 14,
-    fontWeight: "700",
-    fontFamily: "NotoSerifJP",
+    justifyContent: "center",
+    zIndex: 2,
   },
 });

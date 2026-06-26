@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   passportInfoArea: {
-    marginTop: 28,
+    marginTop: 48,
     width: "100%",
     flexDirection: "row",
     alignItems: "center",

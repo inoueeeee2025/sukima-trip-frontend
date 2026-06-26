@@ -1,5 +1,8 @@
+
 import { router, useFocusEffect } from "expo-router";
+import * as Location from "expo-location";
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import {
   Animated,
   Image,
@@ -72,6 +75,25 @@ type VirtualTripState = {
   movementLog: VirtualTripMovementLog[];
 };
 
+type WalkSessionLocation = {
+  latitude: number;
+  longitude: number;
+};
+
+type WalkSessionState = {
+  isActive: boolean;
+  startedAt: string | null;
+  realDistanceKm: number;
+  lastLocation: WalkSessionLocation | null;
+};
+
+const INITIAL_WALK_SESSION: WalkSessionState = {
+  isActive: false,
+  startedAt: null,
+  realDistanceKm: 0,
+  lastLocation: null,
+};
+
 function calculateDistanceKm(fromPoint: TripPoint, toPoint: TripPoint) {
   const earthRadiusKm = 6371;
   const toRadians = (degree: number) => (degree * Math.PI) / 180;
@@ -103,11 +125,16 @@ export default function HomeScreen() {
   const [coinBalance, setCoinBalance] = useState<number | null>(null);
   // setter は #62（バックエンドに座標追加）対応後に使用予定
   const [visitedRoute] = useState<VisitedRoutePoint[]>([]);
+  // アプリ起動中だけ増える一時的な距離データ。保存済みのtodayMovementとは分けて扱う
+  const [walkSession, setWalkSession] =
+    useState<WalkSessionState>(INITIAL_WALK_SESSION);
   const [isExploreMode, setIsExploreMode] = useState(false);
   const [isWalkMode, setIsWalkMode] = useState(false);
   // Street Viewが表示できない原因をログで追うための状態
   const [streetViewStatus, setStreetViewStatus] =
     useState<StreetViewStatus | null>(null);
+  const [streetViewAddress, setStreetViewAddress] =
+    useState<string>("現在地を取得中");
   // Street Viewが見つからなかった時の文言を、Home(map)2上に出すために保持する
   const [streetViewUnavailableMessage, setStreetViewUnavailableMessage] =
     useState<string | null>(null);
@@ -129,8 +156,14 @@ export default function HomeScreen() {
 
   const hasSelectedLandingPoint = selectedLandingPoint !== null;
 
+  const displayedRealDistanceKm =
+    (todayMovement?.real_distance_km ?? 0) + walkSession.realDistanceKm;
+
+  const availableVirtualDistanceKm =
+    virtualTrip.totalVirtualDistanceKm + walkSession.realDistanceKm * 10;
+
   const remainingVirtualDistanceKm = Math.max(
-    virtualTrip.totalVirtualDistanceKm - virtualTrip.usedVirtualDistanceKm,
+    availableVirtualDistanceKm - virtualTrip.usedVirtualDistanceKm,
     0,
   );
 
@@ -139,6 +172,22 @@ export default function HomeScreen() {
 
   async function handleLogout() {
     await logoutUser();
+    setIsDashboardOpen(false);
+    setIsExploreMode(false);
+    setIsWalkMode(false);
+    setWalkSession(INITIAL_WALK_SESSION);
+    setSelectedLandingPoint(null);
+    setPendingStreetViewPoint(null);
+    setVirtualTrip({
+      startPoint: null,
+      currentPoint: null,
+      totalVirtualDistanceKm: 0,
+      usedVirtualDistanceKm: 0,
+      movementLog: [],
+    });
+    setProfile(null);
+    setTodayMovement(null);
+    setTotalMovement(null);
   }
 
   const DEFAULT_MAP_CENTER: TripPoint = {
@@ -204,6 +253,48 @@ export default function HomeScreen() {
     setIsWalkMode(false);
     setIsExploreMode(true);
   }
+
+  function handleWalkLocationChange(location: WalkSessionLocation) {
+    setWalkSession((current) => {
+      if (!current.isActive) {
+        return current;
+      }
+
+      if (!current.lastLocation) {
+        return {
+          ...current,
+          lastLocation: location,
+        };
+      }
+
+      const movedDistanceKm = calculateDistanceKm(
+        {
+          name: "前回の現在地",
+          latitude: current.lastLocation.latitude,
+          longitude: current.lastLocation.longitude,
+        },
+        {
+          name: "現在地",
+          latitude: location.latitude,
+          longitude: location.longitude,
+        },
+      );
+
+      if (movedDistanceKm < 0.005) {
+        return {
+          ...current,
+          lastLocation: location,
+        };
+      }
+
+      return {
+        ...current,
+        realDistanceKm: current.realDistanceKm + movedDistanceKm,
+        lastLocation: location,
+      };
+    });
+  }
+
   function handleStreetViewPositionChange(position: StreetViewPosition) {
     setVirtualTrip((current) => {
       if (!current.currentPoint) {
@@ -252,6 +343,61 @@ export default function HomeScreen() {
   }
 
   useEffect(() => {
+    if (!isLoggedIn) {
+      setWalkSession(INITIAL_WALK_SESSION);
+      return;
+    }
+
+    setWalkSession((current) => {
+      if (current.isActive) {
+        return current;
+      }
+
+      return {
+        ...INITIAL_WALK_SESSION,
+        isActive: true,
+        startedAt: new Date().toISOString(),
+      };
+    });
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!walkSession.isActive) {
+      return;
+    }
+
+    let subscription: Location.LocationSubscription | null = null;
+
+    async function watchLocation() {
+      const permission = await Location.requestForegroundPermissionsAsync();
+
+      if (permission.status !== "granted") {
+        setWalkSession(INITIAL_WALK_SESSION);
+        return;
+      }
+
+      subscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.Balanced,
+          distanceInterval: 5,
+        },
+        (location) => {
+          handleWalkLocationChange({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          });
+        },
+      );
+    }
+
+    watchLocation();
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [walkSession.isActive]);
+
+  useEffect(() => {
     async function loadHomeData() {
       try {
         const token = await getAccessToken();
@@ -282,8 +428,6 @@ export default function HomeScreen() {
           totalVirtualDistanceKm: movementResult.virtual_distance_km,
           usedVirtualDistanceKm: movementResult.used_virtual_distance_km,
         }));
-
-      
       } catch (error) {
         console.error("ホームデータ取得に失敗しました", error);
         setProfile(null);
@@ -349,12 +493,14 @@ export default function HomeScreen() {
         <WalkModeScreen
           latitude={virtualTrip.currentPoint.latitude}
           longitude={virtualTrip.currentPoint.longitude}
+          locationName={streetViewAddress}
           remainingVirtualDistanceKm={remainingVirtualDistanceKm}
           onStatusChange={(status) => {
             console.log("streetViewStatus", status);
             setStreetViewStatus(status);
           }}
           onPositionChange={handleStreetViewPositionChange}
+          onAddressChange={setStreetViewAddress}
           onExit={handleExitWalkMode}
         />
       ) : (
@@ -445,7 +591,7 @@ export default function HomeScreen() {
               <ThemedText style={styles.distanceText}>...</ThemedText>
             ) : (
               <ThemedText style={styles.distanceText}>
-                {remainingVirtualDistanceKm.toFixed(0)}
+                  {displayedRealDistanceKm.toFixed(1)}
               </ThemedText>
             )}
 
@@ -461,7 +607,7 @@ export default function HomeScreen() {
               style={styles.coinIconImage}
             />
             <ThemedText style={styles.coinText}>
-              {isMovementLoading ? "..." : coinBalance ?? "-"}
+              {isMovementLoading ? "..." : (coinBalance ?? "-")}
             </ThemedText>
           </View>
           {isExploreMode ? (

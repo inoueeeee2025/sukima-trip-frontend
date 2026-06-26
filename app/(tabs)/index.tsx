@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -319,6 +319,22 @@ export default function HomeScreen() {
 
     loadHomeData();
   }, []); //ホーム画面が開いた時にプロフィール取得が走る、tokenを読んで/profileを叩く、結果をprofile　stateに入れる
+
+  useFocusEffect(
+    useCallback(() => {
+      async function refreshProfile() {
+        const token = await getAccessToken();
+        if (!token) return;
+        try {
+          const profileResult = await getProfile(token);
+          setProfile(profileResult);
+        } catch {
+          // ignore, keep existing profile data
+        }
+      }
+      refreshProfile();
+    }, [])
+  );
 
   useEffect(() => {
     if (!streetViewUnavailableMessage) {

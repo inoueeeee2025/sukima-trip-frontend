@@ -51,7 +51,7 @@ export default function ProfileEditScreen() {
         setGender(profile.gender ? (GENDER_LABELS[profile.gender] ?? "") : "");
         setExistingAvatarUrl(profile.avatar_url ?? null);
       } catch {
-        // ignore, user can still edit manually
+        setErrorMessage("プロフィールの取得に失敗しました。手動で入力してください。");
       } finally {
         setIsLoading(false);
       }

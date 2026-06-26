@@ -15,6 +15,7 @@ type StreetViewPanelProps = {
   longitude: number;
   onStatusChange?: (status: StreetViewStatus) => void;
   onPositionChange?: (position: StreetViewPosition) => void;
+  onAddressChange?: (address: string) => void;
 };
 
 export type StreetViewStatus =
@@ -29,6 +30,7 @@ export function StreetViewPanel({
   longitude,
   onStatusChange,
   onPositionChange,
+  onAddressChange,
 }: StreetViewPanelProps) {
   const WebViewRef = useRef<WebView>(null);
 
@@ -68,6 +70,57 @@ export function StreetViewPanel({
         <div id="street-view"></div>
         <script>
           let panorama;
+let geocoder;
+
+function notifyAddress(position) {
+  if (!geocoder) {
+    geocoder = new google.maps.Geocoder();
+  }
+
+ geocoder.geocode(
+  { location: position },
+  function(results, status) {
+    if (status !== "OK" || !results || !results[0]) {
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({
+          type: "streetViewAddressChanged",
+          address: "住所を取得できません"
+        })
+      );
+
+      return;
+    }
+
+    const addressComponents = results[0].address_components;
+
+    const prefecture = addressComponents.find(function(component) {
+      return component.types.includes("administrative_area_level_1");
+    });
+
+    const cityOrWard = addressComponents.find(function(component) {
+      return (
+        component.types.includes("locality") ||
+        component.types.includes("administrative_area_level_2") ||
+        component.types.includes("sublocality_level_1")
+      );
+    });
+
+    const displayAddress = [
+      cityOrWard?.long_name,
+      prefecture?.long_name
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    window.ReactNativeWebView.postMessage(
+      JSON.stringify({
+        type: "streetViewAddressChanged",
+        address: displayAddress || results[0].formatted_address
+      })
+    );
+  }
+);
+}
 
           // WebView内の状態をReact Native側へ送る
           function notifyStatus(status, detail) {
@@ -101,23 +154,29 @@ export function StreetViewPanel({
               );
 
               // Street Viewの表示地点が変わった時に新しい座標をReact Native側へ送る
-              panorama.addListener("position_changed", function() {
-                const currentPosition = panorama.getPosition();
+         panorama.addListener("position_changed", function() {
+  const currentPosition = panorama.getPosition();
 
-                if (!currentPosition) {
-                  return;
-                }
+  if (!currentPosition) {
+    return;
+  }
 
-                window.ReactNativeWebView.postMessage(
-                  JSON.stringify({
-                    type: "streetViewPositionChanged",
-                    latitude: currentPosition.lat(),
-                    longitude: currentPosition.lng()
-                  })
-                );
-              });
+  window.ReactNativeWebView.postMessage(
+    JSON.stringify({
+      type: "streetViewPositionChanged",
+      latitude: currentPosition.lat(),
+      longitude: currentPosition.lng()
+    })
+  );
 
-              return;
+  notifyAddress(currentPosition);
+});
+
+// 初回表示では position_changed が発火しない場合があるため、
+// panorama作成時の位置でも住所取得を走らせる
+notifyAddress(position);
+
+return;
             }
 
             panorama.setPosition(position);
@@ -193,6 +252,11 @@ export function StreetViewPanel({
 
         if (data.type === "streetViewStatus") {
           onStatusChange?.(data.status);
+          return;
+        }
+
+        if (data.type === "streetViewAddressChanged") {
+          onAddressChange?.(data.address);
           return;
         }
 

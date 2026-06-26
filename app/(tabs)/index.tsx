@@ -135,6 +135,8 @@ export default function HomeScreen() {
   // Street Viewが表示できない原因をログで追うための状態
   const [streetViewStatus, setStreetViewStatus] =
     useState<StreetViewStatus | null>(null);
+  const [streetViewAddress, setStreetViewAddress] =
+    useState<string>("現在地を取得中");
   // Street Viewが見つからなかった時の文言を、Home(map)2上に出すために保持する
   const [streetViewUnavailableMessage, setStreetViewUnavailableMessage] =
     useState<string | null>(null);
@@ -476,12 +478,14 @@ export default function HomeScreen() {
         <WalkModeScreen
           latitude={virtualTrip.currentPoint.latitude}
           longitude={virtualTrip.currentPoint.longitude}
+          locationName={streetViewAddress}
           remainingVirtualDistanceKm={remainingVirtualDistanceKm}
           onStatusChange={(status) => {
             console.log("streetViewStatus", status);
             setStreetViewStatus(status);
           }}
           onPositionChange={handleStreetViewPositionChange}
+          onAddressChange={setStreetViewAddress}
           onExit={handleExitWalkMode}
         />
       ) : (

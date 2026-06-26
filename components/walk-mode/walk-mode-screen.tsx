@@ -13,18 +13,22 @@ const signboardImage = require("@/assets/images/walk-mode/signboard.png");
 type WalkModeScreenProps = {
   latitude: number;
   longitude: number;
+  locationName: string;
   remainingVirtualDistanceKm: number;
   onStatusChange: (status: StreetViewStatus) => void;
   onPositionChange: (position: StreetViewPosition) => void;
+  onAddressChange: (address: string) => void;
   onExit: () => void;
 };
 
 export function WalkModeScreen({
   latitude,
   longitude,
+  locationName,
   remainingVirtualDistanceKm,
   onStatusChange,
   onPositionChange,
+  onAddressChange,
   onExit,
 }: WalkModeScreenProps) {
   const [isNearestSpotCardOpen, setIsNearestSpotCardOpen] = useState(true);
@@ -35,6 +39,7 @@ export function WalkModeScreen({
         longitude={longitude}
         onStatusChange={onStatusChange}
         onPositionChange={onPositionChange}
+        onAddressChange={onAddressChange}
       />
 
       <View style={styles.topOverlay}>
@@ -44,9 +49,7 @@ export function WalkModeScreen({
             setIsNearestSpotCardOpen((current) => !current);
           }}
         >
-          <ThemedText style={styles.directionArrow}>
-           ↑
-          </ThemedText>
+          <ThemedText style={styles.directionArrow}>↑</ThemedText>
         </Pressable>
 
         <View style={styles.remainingSignWrapper}>
@@ -83,11 +86,9 @@ export function WalkModeScreen({
           <ThemedText style={styles.nearestSpotDistance}>約 200 km</ThemedText>
         </View>
       ) : null}
-      
+
       <View style={styles.locationPill}>
-        <ThemedText style={styles.locationText}>
-          秋田市, 秋田県
-        </ThemedText>
+        <ThemedText style={styles.locationText}>{locationName}</ThemedText>
       </View>
     </View>
   );

@@ -44,11 +44,16 @@ export default function FavoriteSpotsScreen() {
       setDetailPhotoUrl(null);
       return;
     }
+    let cancelled = false;
     setIsDetailPhotoLoading(true);
+    setDetailPhotoUrl(null);
     getPlaceFirstPhotoUrl(selectedItem.place_id).then((url) => {
-      setDetailPhotoUrl(url);
-      setIsDetailPhotoLoading(false);
+      if (!cancelled) {
+        setDetailPhotoUrl(url);
+        setIsDetailPhotoLoading(false);
+      }
     });
+    return () => { cancelled = true; };
   }, [selectedItem]);
 
   async function load() {

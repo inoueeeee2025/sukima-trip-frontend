@@ -4,7 +4,7 @@ export async function getPlaceFirstPhotoUrl(placeId: string): Promise<string | n
   if (!GOOGLE_MAPS_API_KEY) return null;
   try {
     const response = await fetch(
-      `https://places.googleapis.com/v1/places/${placeId}?key=${GOOGLE_MAPS_API_KEY}`,
+      `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?key=${GOOGLE_MAPS_API_KEY}`,
       { headers: { "X-Goog-FieldMask": "photos" } }
     );
     if (!response.ok) return null;

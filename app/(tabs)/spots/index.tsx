@@ -1,10 +1,12 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
   FlatList,
   Image,
+  Modal,
+  Pressable,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -12,8 +14,11 @@ import {
   View,
 } from "react-native";
 
+
+import { getPlaceFirstPhotoUrl } from "@/api/places";
 import { deleteFavorite, Favorite, getFavorites } from "@/api/favorites";
 import { getAccessToken } from "@/components/auth/auth-storage";
+import { FavoriteSpotDetailCard } from "@/components/spots/favorite-spot-detail-card";
 
 const CARD_GAP = 12;
 const SCREEN_PADDING = 16;
@@ -25,12 +30,34 @@ export default function FavoriteSpotsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Favorite | null>(null);
+  const [detailPhotoUrl, setDetailPhotoUrl] = useState<string | null>(null);
+  const [isDetailPhotoLoading, setIsDetailPhotoLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       load();
     }, [])
   );
+
+  useEffect(() => {
+    if (!selectedItem) {
+      setDetailPhotoUrl(null);
+      setIsDetailPhotoLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setIsDetailPhotoLoading(true);
+    setDetailPhotoUrl(null);
+    getPlaceFirstPhotoUrl(selectedItem.place_id).then((url) => {
+      if (!cancelled) {
+        setDetailPhotoUrl(url);
+        setIsDetailPhotoLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [selectedItem]);
 
   async function load() {
     try {
@@ -51,14 +78,19 @@ export default function FavoriteSpotsScreen() {
   }
 
   async function handleToggleLike(item: Favorite) {
+    if (deletingId) return;
     setDeleteError(null);
+    setDeletingId(item.id);
     try {
       const token = await getAccessToken();
       if (!token) return;
       await deleteFavorite(item.id, token);
       setFavorites((prev) => prev.filter((f) => f.id !== item.id));
+      setSelectedItem(null);
     } catch {
       setDeleteError("削除に失敗しました");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -114,15 +146,10 @@ export default function FavoriteSpotsScreen() {
           renderItem={({ item }) => (
             <View style={styles.cardOuter}>
               <View style={styles.card}>
-                {/* 写真エリア（タップで詳細へ遷移、名前バナーをオーバーレイ） */}
+                {/* 写真エリア（タップで詳細オーバーレイ表示） */}
                 <TouchableOpacity
                   style={styles.photoArea}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/(tabs)/spots/[id]",
-                      params: { id: item.place_id, name: item.name },
-                    })
-                  }
+                  onPress={() => setSelectedItem(item)}
                 >
                   <View style={styles.photoPlaceholder} />
                   {/* スポット名バナー：写真上にオーバーレイ */}
@@ -136,20 +163,20 @@ export default function FavoriteSpotsScreen() {
                 <View style={styles.bottomStrip}>
                   <TouchableOpacity
                     style={styles.detailButton}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/(tabs)/spots/[id]",
-                        params: { id: item.place_id, name: item.name },
-                      })
-                    }
+                    onPress={() => setSelectedItem(item)}
                   >
                     <Text style={styles.detailButtonText}>∨</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.heartButton}
                     onPress={() => handleToggleLike(item)}
+                    disabled={!!deletingId}
                   >
-                    <Text style={styles.heartIcon}>♥</Text>
+                    {deletingId === item.id ? (
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    ) : (
+                      <Text style={styles.heartIcon}>♥</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -161,6 +188,30 @@ export default function FavoriteSpotsScreen() {
           )}
         />
       )}
+
+      {/* 詳細モーダル */}
+      <Modal
+        visible={selectedItem !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedItem(null)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setSelectedItem(null)}>
+          <Pressable onPress={() => {}}>
+            {selectedItem && (
+              <FavoriteSpotDetailCard
+                name={selectedItem.name}
+                coinAmount={selectedItem.coin_amount ?? 0}
+                photoUrl={detailPhotoUrl}
+                isPhotoLoading={isDetailPhotoLoading}
+                liked={true}
+                isLiking={deletingId === selectedItem?.id}
+                onHeartPress={() => handleToggleLike(selectedItem)}
+              />
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -330,5 +381,12 @@ const styles = StyleSheet.create({
   retryText: {
     color: "#fff",
     fontWeight: "600",
+  },
+  // --- 詳細モーダル ---
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

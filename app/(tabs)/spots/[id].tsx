@@ -1,7 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -9,13 +8,36 @@ import {
   View,
 } from "react-native";
 
+import { getPlaceFirstPhotoUrl } from "@/api/places";
 import { likeSpot, unlikeSpot } from "@/api/spots";
 import { getAccessToken } from "@/components/auth/auth-storage";
+import { FavoriteSpotDetailCard } from "@/components/spots/favorite-spot-detail-card";
 
 export default function SpotDetailScreen() {
-  const { id, name } = useLocalSearchParams<{ id: string; name: string }>();
+  const { id, name, coin_amount } = useLocalSearchParams<{
+    id: string;
+    name: string;
+    coin_amount?: string;
+  }>();
+
   const [liked, setLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [isPhotoLoading, setIsPhotoLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    setIsPhotoLoading(true);
+    setPhotoUrl(null);
+    getPlaceFirstPhotoUrl(id).then((url) => {
+      if (!cancelled) {
+        setPhotoUrl(url);
+        setIsPhotoLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [id]);
 
   async function toggleLike() {
     if (isLiking || !id) return;
@@ -39,42 +61,33 @@ export default function SpotDetailScreen() {
 
   if (!id) {
     return (
-      <SafeAreaView style={styles.center}>
-        <Text style={styles.errorText}>スポットが見つかりません</Text>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backText}>戻る</Text>
-        </TouchableOpacity>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.center}>
+          <Text style={styles.errorText}>スポットが見つかりません</Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Text style={styles.backArrow}>‹</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>← 戻る</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Text style={styles.backArrow}>‹</Text>
+      </TouchableOpacity>
 
-      <View style={styles.content}>
-        <View style={styles.card}>
-          <Text style={styles.placeId}>スポット ID: {id}</Text>
-          <Text style={styles.note}>詳細情報は #92 で実装予定</Text>
-        </View>
-
-        <TouchableOpacity
-          style={[styles.likeButton, liked && styles.likeButtonActive]}
-          onPress={toggleLike}
-          disabled={isLiking}
-        >
-          {isLiking ? (
-            <ActivityIndicator color={liked ? "#fff" : "#1f6f5f"} />
-          ) : (
-            <Text style={[styles.likeText, liked && styles.likeTextActive]}>
-              {liked ? "♥ いいね済み" : "♡ いいね"}
-            </Text>
-          )}
-        </TouchableOpacity>
+      <View style={styles.floatArea}>
+        <FavoriteSpotDetailCard
+          name={name ?? ""}
+          coinAmount={Number(coin_amount ?? 0)}
+          photoUrl={photoUrl}
+          isPhotoLoading={isPhotoLoading}
+          liked={liked}
+          isLiking={isLiking}
+          onHeartPress={toggleLike}
+        />
       </View>
     </SafeAreaView>
   );
@@ -83,70 +96,39 @@ export default function SpotDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f7f4ed",
+    backgroundColor: "#60d0e5",
+    paddingHorizontal: 24,
+    paddingTop: 16,
+  },
+  floatArea: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingBottom: 40,
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f7f4ed",
     gap: 16,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 8,
   },
   backButton: {
-    alignSelf: "flex-start",
-  },
-  backText: {
-    color: "#1f6f5f",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    gap: 16,
-  },
-  card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#d5cec3",
-    gap: 8,
-  },
-  placeId: {
-    fontSize: 14,
-    color: "#888",
-  },
-  note: {
-    fontSize: 14,
-    color: "#aaa",
-  },
-  likeButton: {
-    borderWidth: 2,
-    borderColor: "#1f6f5f",
-    borderRadius: 8,
-    paddingVertical: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.4)",
     alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
   },
-  likeButtonActive: {
-    backgroundColor: "#1f6f5f",
-  },
-  likeText: {
-    color: "#1f6f5f",
+  backArrow: {
+    fontSize: 24,
+    color: "#ffffff",
     fontWeight: "700",
-    fontSize: 16,
-  },
-  likeTextActive: {
-    color: "#fff",
+    lineHeight: 28,
   },
   errorText: {
-    color: "#c0392b",
+    color: "#ffffff",
     fontSize: 14,
   },
 });

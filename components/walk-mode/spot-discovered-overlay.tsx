@@ -65,6 +65,7 @@ export function SpotDiscoveredOverlay({
       {/* スポット発見！バナー */}
       <Image
         source={spotDiscoveredBanner}
+        style={styles.discoveredBanner}
       />
 
       {/* スポットカード */}
@@ -140,6 +141,9 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     flexDirection: "column",
+  },
+  discoveredBanner: {
+    alignSelf: "flex-end",
   },
   cardScroll: {
     flex: 1,

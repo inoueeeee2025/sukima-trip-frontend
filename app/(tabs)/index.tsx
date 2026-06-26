@@ -538,6 +538,7 @@ export default function HomeScreen() {
               <DashboardPassport
                 totalMovement={totalMovement}
                 onLogout={handleLogout}
+                onEditProfile={() => router.push("/(tabs)/profile/edit")}
                 avatarUrl={profile?.avatar_url}
                 name={profile?.name}
                 gender={profile?.gender}

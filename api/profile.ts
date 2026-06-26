@@ -8,6 +8,19 @@ export type ProfileResponse = {
     avatar_url?: string;
 };
 
+export type UpdateProfileRequest = {
+  name?: string;
+  gender?: string;
+};
+
+export function updateProfile(body: UpdateProfileRequest, accessToken: string) {
+  return apiRequest<ProfileResponse>("/profile", {
+    method: "PUT",
+    body,
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
 export function getProfile(accessToken: string){
     return apiRequest<ProfileResponse>("/profile",{
         method: "GET",

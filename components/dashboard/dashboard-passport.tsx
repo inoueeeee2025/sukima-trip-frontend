@@ -7,6 +7,7 @@ import { ThemedText } from "@/components/themed-text";
 type DashboardPassportProps = {
   totalMovement: TotalMovementResponse | null;
   onLogout: () => void;
+  onEditProfile?: () => void;
   avatarUrl?: string | null;
   name?: string | null;
   gender?: string | null;
@@ -15,6 +16,7 @@ type DashboardPassportProps = {
 export function DashboardPassport({
   totalMovement,
   onLogout,
+  onEditProfile,
   avatarUrl,
   name,
   gender,
@@ -93,7 +95,7 @@ export function DashboardPassport({
         </View>
       </View>
 
-      <Pressable style={styles.profileEditButton}>
+      <Pressable style={styles.profileEditButton} onPress={onEditProfile}>
         <ThemedText style={styles.profileEditText}>プロフィール変更</ThemedText>
       </Pressable>
 
@@ -233,10 +235,10 @@ const styles = StyleSheet.create({
   },
   profileEditButton: {
     marginTop: 8,
-    width: "72%",
-    paddingVertical: 10,
+    width: "56%",
+    paddingVertical: 8,
     borderRadius: 10,
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: "#9e171a",
     backgroundColor: "#fff4c9",
     alignItems: "center",
@@ -244,7 +246,7 @@ const styles = StyleSheet.create({
   },
   profileEditText: {
     color: "#111111",
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "700",
     fontFamily: "NotoSerifJP",
   },

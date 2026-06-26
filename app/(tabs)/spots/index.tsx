@@ -33,7 +33,7 @@ export default function FavoriteSpotsScreen() {
   const [selectedItem, setSelectedItem] = useState<Favorite | null>(null);
   const [detailPhotoUrl, setDetailPhotoUrl] = useState<string | null>(null);
   const [isDetailPhotoLoading, setIsDetailPhotoLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -78,8 +78,9 @@ export default function FavoriteSpotsScreen() {
   }
 
   async function handleToggleLike(item: Favorite) {
+    if (deletingId) return;
     setDeleteError(null);
-    setIsDeleting(true);
+    setDeletingId(item.id);
     try {
       const token = await getAccessToken();
       if (!token) return;
@@ -89,7 +90,7 @@ export default function FavoriteSpotsScreen() {
     } catch {
       setDeleteError("削除に失敗しました");
     } finally {
-      setIsDeleting(false);
+      setDeletingId(null);
     }
   }
 
@@ -169,8 +170,13 @@ export default function FavoriteSpotsScreen() {
                   <TouchableOpacity
                     style={styles.heartButton}
                     onPress={() => handleToggleLike(item)}
+                    disabled={!!deletingId}
                   >
-                    <Text style={styles.heartIcon}>♥</Text>
+                    {deletingId === item.id ? (
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    ) : (
+                      <Text style={styles.heartIcon}>♥</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -199,7 +205,7 @@ export default function FavoriteSpotsScreen() {
                 photoUrl={detailPhotoUrl}
                 isPhotoLoading={isDetailPhotoLoading}
                 liked={true}
-                isLiking={isDeleting}
+                isLiking={deletingId === selectedItem?.id}
                 onHeartPress={() => handleToggleLike(selectedItem)}
               />
             )}

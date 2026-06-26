@@ -50,6 +50,8 @@ export function DashboardPassport({
 
         <View style={styles.passportInfoArea}>
           <View style={styles.passportCharacterArea}>
+            <ThemedText style={styles.passportLabel}>旅券</ThemedText>
+            <ThemedText style={styles.passportLabelEn}>PASSPORT</ThemedText>
             {avatarUrl && !avatarError ? (
               <View style={styles.passportAvatarWrap}>
                 <Image
@@ -122,28 +124,30 @@ const styles = StyleSheet.create({
     maxWidth: 380,
     alignItems: "center",
     gap: 4,
+    paddingBottom: 55,
     zIndex: 1,
   },
   dashboardPassportImage: {
     position: "absolute",
     top: 0,
     width: "100%",
-    height: "100%",
+    height: 400,
     resizeMode: "contain",
+    transform: [{ translateY: -10 }],
   },
   dashboardContent: {
     width: "78%",
     minHeight: 260,
-    paddingTop: 40,
+    paddingTop: 20,
     gap: 12,
     zIndex: 1,
   },
   dashboardSectionTitle: {
     fontFamily: "NotoSerifJP",
     color: "#111111",
-    fontSize: 20,
-    top:10,
-    fontWeight: "500",
+    fontSize: 22,
+    top:4,
+    fontWeight: "700",
     textAlign: "center",
     textDecorationLine: "underline",
   },
@@ -157,7 +161,8 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSerifJP",
     color: "#111111",
     fontSize: 34,
-    fontWeight: "800",
+    lineHeight: 42,
+    fontWeight: "900",
     textAlign: "center",
   },
   dashboardCoinText: {
@@ -205,6 +210,26 @@ const styles = StyleSheet.create({
     height: 80,
     resizeMode: "cover",
   },
+  passportLabel: {
+    position: "absolute",
+    top: -40,
+    alignSelf: "center",
+    color: "#111111",
+    fontSize: 15,
+    fontWeight: "700",
+    fontFamily: "NotoSerifJP",
+    zIndex: 2,
+  },
+  passportLabelEn: {
+    position: "absolute",
+    top: -28,
+    alignSelf: "center",
+    color: "#111111",
+    fontSize: 15,
+    fontWeight: "600",
+    fontFamily: "NotoSerifJP",
+    zIndex: 2,
+  },
   passportFootprint: {
     position: "absolute",
     right: -8,
@@ -231,10 +256,12 @@ const styles = StyleSheet.create({
   profileLabel: {
     color: "#333333",
     fontSize: 14,
+    fontFamily: "NotoSerifJP",
   },
   profileValue: {
     color: "#111111",
     fontSize: 14,
+    fontFamily: "NotoSerifJP",
   },
   totalDistanceText: {
     color: "#111111",
@@ -244,6 +271,8 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSerifJP",
   },
   profileEditButton: {
+    position: "absolute",
+    bottom: -54,
     width: "46%",
     paddingVertical: 6,
     borderRadius: 8,
@@ -255,14 +284,13 @@ const styles = StyleSheet.create({
   },
   profileEditText: {
     color: "#111111",
-    fontSize: 12,
+    fontSize: 17,
     fontWeight: "700",
-    fontFamily: "NotoSerifJP",
   },
   logoutButton: {
     position: "absolute",
     top: 19,
-    right: 18,
+    right: 30,
     width: 36,
     height: 36,
     borderRadius: 18,

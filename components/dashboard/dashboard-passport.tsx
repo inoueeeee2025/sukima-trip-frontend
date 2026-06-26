@@ -95,11 +95,11 @@ export function DashboardPassport({
             </ThemedText>
           </View>
         </View>
-      </View>
 
-      <Pressable style={styles.profileEditButton} onPress={onEditProfile}>
-        <ThemedText style={styles.profileEditText}>プロフィール変更</ThemedText>
-      </Pressable>
+        <Pressable style={styles.profileEditButton} onPress={onEditProfile}>
+          <ThemedText style={styles.profileEditText}>プロフィール変更</ThemedText>
+        </Pressable>
+      </View>
 
       {/* ログアウトボタン：パスポート右上に絶対配置（レイアウトに影響しない） */}
       <Pressable style={styles.logoutButton} onPress={onLogout}>
@@ -237,7 +237,6 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSerifJP",
   },
   profileEditButton: {
-    marginTop: 8,
     width: "56%",
     paddingVertical: 8,
     borderRadius: 10,

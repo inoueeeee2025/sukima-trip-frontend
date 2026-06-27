@@ -51,7 +51,7 @@ export function WalkModeScreen({
 
   async function fetchNearestSpot(lat: number, lng: number) {
     const now = Date.now();
-    if (now - lastFetchTimeRef.current < 3000) return;
+    if (now - lastFetchTimeRef.current < 1000) return;
     lastFetchTimeRef.current = now;
 
     const token = await getAccessToken();

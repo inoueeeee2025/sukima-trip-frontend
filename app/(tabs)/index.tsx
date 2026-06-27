@@ -441,7 +441,6 @@ export default function HomeScreen() {
       if (movedDistanceKm < 0.001) {
         return current;
       }
-
       if (remainingDistanceKm <= VIRTUAL_DISTANCE_FINISH_THRESHOLD_KM) {
         setStreetViewRollbackPosition({
           latitude: previousPoint.latitude,

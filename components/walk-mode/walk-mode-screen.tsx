@@ -119,7 +119,7 @@ export function WalkModeScreen({
         >
           <ThemedText style={styles.remainingLabel}>残り</ThemedText>
           <ThemedText style={styles.remainingNumber}>
-            {remainingVirtualDistanceKm.toFixed(0)}
+            {remainingVirtualDistanceKm.toFixed(1)}
           </ThemedText>
           <ThemedText style={styles.remainingUnit}>km</ThemedText>
         </ImageBackground>

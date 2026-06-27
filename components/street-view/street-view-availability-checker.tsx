@@ -63,8 +63,7 @@ export function StreetViewAvailabilityChecker({
             service.getPanorama(
               {
                 location: requestedPosition,
-                radius: radius,
-                source: google.maps.StreetViewSource.OUTDOOR
+                radius: radius
               },
               function(data, status) {
                 if (status === google.maps.StreetViewStatus.OK && data.location) {

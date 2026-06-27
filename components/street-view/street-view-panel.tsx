@@ -101,13 +101,6 @@ function notifyAddress(position) {
   { location: position },
   function(results, status) {
     if (status !== "OK" || !results || !results[0]) {
-      window.ReactNativeWebView.postMessage(
-        JSON.stringify({
-          type: "streetViewAddressChanged",
-          address: "住所を取得できません"
-        })
-      );
-
       return;
     }
 

@@ -73,7 +73,8 @@ export function WalkModeScreen({
           setDiscoveredSpot({ ...arrived, spotName: result.name, placeId: result.place_id });
         } catch (arriveError) {
           const isAlreadyArrived =
-            arriveError instanceof Error && arriveError.message.includes("到着済み");
+            arriveError instanceof Error &&
+            arriveError.message.includes("到着済み");
           if (!isAlreadyArrived) {
             arrivedPlaceIdsRef.current.delete(result.place_id);
           }
@@ -89,7 +90,7 @@ export function WalkModeScreen({
   // ウォーク開始時に初回取得
   useEffect(() => {
     fetchNearestSpot(latitude, longitude);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <View style={styles.container}>
@@ -325,7 +326,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.35)",
+    backgroundColor: "transparent",
+    pointerEvents: "none",
   },
   locationPill: {
     position: "absolute",

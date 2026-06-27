@@ -159,6 +159,10 @@ export default function HomeScreen() {
     usedVirtualDistanceKm: 0,
     movementLog: [],
   });
+  // Walk mode中に毎回currentPointをstate更新するとWebViewが黒くなるため、最新地点はrefで保持する
+  const streetViewLatestPointRef = useRef<TripPoint | null>(null);
+  // 終了時に保存する今回分のStreet View移動ログも、移動中はrefにためる
+  const streetViewMovementLogRef = useRef<VirtualTripMovementLog[]>([]);
 
   const hasSelectedLandingPoint = selectedLandingPoint !== null;
 
@@ -194,6 +198,8 @@ export default function HomeScreen() {
       usedVirtualDistanceKm: 0,
       movementLog: [],
     });
+    streetViewLatestPointRef.current = null;
+    streetViewMovementLogRef.current = [];
     setProfile(null);
     setTodayMovement(null);
     setTotalMovement(null);
@@ -277,7 +283,7 @@ export default function HomeScreen() {
   }
 
   function calculateCurrentConsumedVirtualDistanceKm() {
-    return virtualTrip.movementLog.reduce(
+    return streetViewMovementLogRef.current.reduce(
       (totalDistanceKm, log) => totalDistanceKm + log.distanceKm,
       0,
     );
@@ -319,10 +325,12 @@ export default function HomeScreen() {
 
     setVirtualTrip((current) => ({
       ...current,
+      currentPoint: streetViewLatestPointRef.current ?? current.currentPoint,
       totalVirtualDistanceKm: movementResult.virtual_distance_km,
       usedVirtualDistanceKm: movementResult.used_virtual_distance_km,
       movementLog: [],
     }));
+    streetViewMovementLogRef.current = [];
 
     setWalkSession({
       ...INITIAL_WALK_SESSION,
@@ -406,6 +414,9 @@ export default function HomeScreen() {
         return current;
       }
 
+      const previousPoint =
+        streetViewLatestPointRef.current ?? current.currentPoint;
+
       const nextPoint: TripPoint = {
         name: "Street View移動地点",
         latitude: position.latitude,
@@ -413,7 +424,7 @@ export default function HomeScreen() {
       };
 
       const movedDistanceKm = calculateDistanceKm(
-        current.currentPoint,
+        previousPoint,
         nextPoint,
       );
 
@@ -433,8 +444,8 @@ export default function HomeScreen() {
 
       if (remainingDistanceKm <= VIRTUAL_DISTANCE_FINISH_THRESHOLD_KM) {
         setStreetViewRollbackPosition({
-          latitude: current.currentPoint.latitude,
-          longitude: current.currentPoint.longitude,
+          latitude: previousPoint.latitude,
+          longitude: previousPoint.longitude,
         });
         setIsWalkFinishedModalOpen(true);
 
@@ -443,8 +454,8 @@ export default function HomeScreen() {
 
       if (movedDistanceKm > remainingDistanceKm) {
         setStreetViewRollbackPosition({
-          latitude: current.currentPoint.latitude,
-          longitude: current.currentPoint.longitude,
+          latitude: previousPoint.latitude,
+          longitude: previousPoint.longitude,
         });
 
         return current;
@@ -463,18 +474,22 @@ export default function HomeScreen() {
 
       const movementLog: VirtualTripMovementLog = {
         id: `${Date.now()}`,
-        fromPoint: current.currentPoint,
+        fromPoint: previousPoint,
         toPoint: nextPoint,
         distanceKm: consumedDistanceKm,
         movedAt: new Date().toISOString(),
       };
 
+      streetViewLatestPointRef.current = nextPoint;
+      streetViewMovementLogRef.current = [
+        ...streetViewMovementLogRef.current,
+        movementLog,
+      ];
+
       return {
         ...current,
-        currentPoint: nextPoint,
         usedVirtualDistanceKm:
           current.usedVirtualDistanceKm + consumedDistanceKm,
-        movementLog: [...current.movementLog, movementLog],
       };
     });
   }
@@ -785,6 +800,9 @@ export default function HomeScreen() {
                     latitude: result.latitude,
                     longitude: result.longitude,
                   };
+
+                  streetViewLatestPointRef.current = correctedPoint;
+                  streetViewMovementLogRef.current = [];
 
                   setVirtualTrip((current) => ({
                     ...current,

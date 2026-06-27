@@ -430,8 +430,6 @@ export default function HomeScreen() {
       if (movedDistanceKm < 0.001) {
         return current;
       }
-      console.log(`[VirtualTrip] moved: ${movedDistanceKm.toFixed(4)}km, used: ${current.usedVirtualDistanceKm.toFixed(3)}km, remaining: ${(availableDistanceKm - current.usedVirtualDistanceKm).toFixed(3)}km`);
-
       if (remainingDistanceKm <= VIRTUAL_DISTANCE_FINISH_THRESHOLD_KM) {
         setStreetViewRollbackPosition({
           latitude: current.currentPoint.latitude,
